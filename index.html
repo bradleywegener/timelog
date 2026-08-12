@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="timelog">
+<meta name="theme-color" content="#0D1117">
+
+<title>timelog</title>
+
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+  <div>
+    <div class="logo">timelog</div>
+    <div class="logo-sub">personal productivity tracker</div>
+  </div>
+</header>
+
+<div id="content">
+  <main>
+
+    <!-- TRACK -->
+    <div id="view-track" class="view active">
+
+      <div id="active-card" class="card" style="display:none;">
+        <div id="timer-display">
+          <div class="section-label" style="margin-bottom:8px">recording</div>
+          <div class="time" id="elapsed-display">0s</div>
+
+          <div class="timer-meta">
+            <span class="pulse-dot" id="pulse-dot"></span>
+            <span id="active-label-display"></span>
+            <span style="color:#7D8590">·</span>
+            <span id="active-cat-display" style="color:#7D8590"></span>
+          </div>
+
+          <button class="btn btn-stop" onclick="stopTimer()">
+            Stop &amp; Save
+          </button>
+        </div>
+      </div>
+
+      <div id="new-entry-card" class="card">
+
+        <div class="section-label">new entry</div>
+
+        <div class="field-label">category</div>
+        <div class="cat-pills" id="cat-pills"></div>
+
+        <div class="field-label">what are you doing? (optional)</div>
+
+        <input
+          type="text"
+          id="entry-label"
+          placeholder="e.g. Writing, Morning walk…"
+          autocomplete="off"
+          autocorrect="off"
+        >
+
+        <button class="btn btn-start" onclick="startTimer()">
+          ▶ Start Timer
+        </button>
+
+      </div>
+
+      <div id="today-card" class="card" style="display:none">
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div class="section-label" style="margin-bottom:0">today</div>
+          <div style="font-size:12px;color:#7D8590" id="today-total"></div>
+        </div>
+
+        <div id="today-entries"></div>
+
+      </div>
+
+    </div>
+
+    <!-- LOG -->
+    <div id="view-log" class="view">
+      <div id="log-content"></div>
+    </div>
+
+    <!-- INSIGHTS -->
+    <div id="view-insights" class="view">
+
+      <div class="card">
+        <div class="section-label">today's breakdown</div>
+        <div id="today-bars"></div>
+      </div>
+
+      <div class="card">
+        <div class="section-label">all time</div>
+        <div class="stats-grid" id="all-time-stats"></div>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<nav>
+
+  <button class="nav-btn active" onclick="switchView('track', this)">
+    <span class="nav-icon">⏱</span>
+    track
+  </button>
+
+  <button class="nav-btn" onclick="switchView('log', this)">
+    <span class="nav-icon">📋</span>
+    log
+  </button>
+
+  <button class="nav-btn" onclick="switchView('insights', this)">
+    <span class="nav-icon">📊</span>
+    insights
+  </button>
+
+</nav>
+
+<script src="script.js"></script>
+
+</body>
+</html>
