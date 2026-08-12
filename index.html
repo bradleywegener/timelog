@@ -6,27 +6,19 @@
     name="viewport"
     content="width=device-width, initial-scale=1.0, viewport-fit=cover"
   >
-  <meta
-    name="apple-mobile-web-app-capable"
-    content="yes"
-  >
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <meta
     name="apple-mobile-web-app-status-bar-style"
     content="black-translucent"
   >
-  <meta
-    name="apple-mobile-web-app-title"
-    content="timelog"
-  >
-  <meta
-    name="theme-color"
-    content="#0D1117"
-  >
+  <meta name="apple-mobile-web-app-title" content="timelog">
+  <meta name="theme-color" content="#0F1115">
 
   <title>timelog</title>
 
   <link
-    href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@700;800&display=swap"
+    href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@700;800&display=swap"
     rel="stylesheet"
   >
 
@@ -42,18 +34,17 @@
   </div>
 </header>
 
-
 <div id="content">
 
   <main>
 
-    <!-- TRACK -->
+    <!-- ==================================================
+         TRACK
+         ================================================== -->
 
     <div id="view-track" class="view active">
 
-      <!-- Active timer -->
-
-      <div id="active-card" class="card hidden">
+      <div id="active-card" class="card" style="display:none;">
 
         <div id="timer-display">
 
@@ -74,9 +65,7 @@
 
             <span id="active-label-display"></span>
 
-            <span class="muted">
-              ·
-            </span>
+            <span class="muted">·</span>
 
             <span
               id="active-cat-display"
@@ -86,8 +75,8 @@
           </div>
 
           <button
-            id="stop-timer-btn"
             class="btn btn-stop"
+            onclick="stopTimer()"
           >
             Stop &amp; Save
           </button>
@@ -97,12 +86,7 @@
       </div>
 
 
-      <!-- New entry -->
-
-      <div
-        id="new-entry-card"
-        class="card"
-      >
+      <div id="new-entry-card" class="card">
 
         <div class="section-label">
           new entry
@@ -130,8 +114,8 @@
         >
 
         <button
-          id="start-timer-btn"
           class="btn btn-start"
+          onclick="startTimer()"
         >
           ▶ Start Timer
         </button>
@@ -139,11 +123,10 @@
       </div>
 
 
-      <!-- Today -->
-
       <div
         id="today-card"
-        class="card hidden"
+        class="card"
+        style="display:none"
       >
 
         <div class="today-header">
@@ -153,8 +136,8 @@
           </div>
 
           <div
-            id="today-total"
             class="today-total"
+            id="today-total"
           ></div>
 
         </div>
@@ -166,35 +149,106 @@
     </div>
 
 
-    <!-- LOG -->
+    <!-- ==================================================
+         LOG
+         ================================================== -->
 
-    <div
-      id="view-log"
-      class="view"
-    >
+    <div id="view-log" class="view">
 
       <div id="log-content"></div>
 
     </div>
 
 
-    <!-- INSIGHTS -->
+    <!-- ==================================================
+         INSIGHTS
+         ================================================== -->
 
-    <div
-      id="view-insights"
-      class="view"
-    >
+    <div id="view-insights" class="view">
+
+      <!-- Selected day -->
+
+      <div class="card">
+
+        <div class="insights-date-nav">
+
+          <button
+            class="date-nav-btn"
+            id="previous-day"
+            onclick="changeInsightDay(-1)"
+            aria-label="Previous day"
+          >
+            ‹
+          </button>
+
+          <div class="insights-date">
+
+            <div
+              class="insights-date-label"
+              id="insights-date-label"
+            >
+              TODAY
+            </div>
+
+            <div
+              class="insights-date-total"
+              id="insights-date-total"
+            >
+              0s
+            </div>
+
+          </div>
+
+          <button
+            class="date-nav-btn"
+            id="next-day"
+            onclick="changeInsightDay(1)"
+            aria-label="Next day"
+          >
+            ›
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- Daily breakdown -->
 
       <div class="card">
 
         <div class="section-label">
-          today's breakdown
+          day's breakdown
         </div>
 
-        <div id="today-bars"></div>
+        <div id="selected-day-bars"></div>
 
       </div>
 
+
+      <!-- Weekly breakdown -->
+
+      <div class="card">
+
+        <div class="weekly-header">
+
+          <div class="section-label weekly-label">
+            weekly breakdown
+          </div>
+
+          <div
+            class="weekly-total"
+            id="weekly-total"
+          ></div>
+
+        </div>
+
+        <div id="weekly-breakdown"></div>
+
+      </div>
+
+
+      <!-- All time -->
 
       <div class="card">
 
@@ -216,13 +270,15 @@
 </div>
 
 
-<!-- Navigation -->
+<!-- ==================================================
+     NAVIGATION
+     ================================================== -->
 
 <nav>
 
   <button
     class="nav-btn active"
-    data-view="track"
+    onclick="switchView('track', this)"
   >
     <span class="nav-icon">⏱</span>
     track
@@ -230,7 +286,7 @@
 
   <button
     class="nav-btn"
-    data-view="log"
+    onclick="switchView('log', this)"
   >
     <span class="nav-icon">📋</span>
     log
@@ -238,7 +294,7 @@
 
   <button
     class="nav-btn"
-    data-view="insights"
+    onclick="switchView('insights', this)"
   >
     <span class="nav-icon">📊</span>
     insights
