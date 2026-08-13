@@ -2,18 +2,38 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0, viewport-fit=cover"
   >
 
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta
+    name="apple-mobile-web-app-capable"
+    content="yes"
+  >
+
   <meta
     name="apple-mobile-web-app-status-bar-style"
     content="black-translucent"
   >
-  <meta name="apple-mobile-web-app-title" content="timelog">
-  <meta name="theme-color" content="#0F1115">
+
+  <meta
+    name="apple-mobile-web-app-title"
+    content="timelog"
+  >
+
+  <meta
+    name="theme-color"
+    content="#0F1115"
+  >
+
+  <link rel="manifest" href="manifest.json">
+
+  <link
+    rel="apple-touch-icon"
+    href="icons/apple-touch-icon.png"
+  >
 
   <title>timelog</title>
 
@@ -32,7 +52,10 @@
     <div class="logo">timelog</div>
     <div class="logo-sub">personal productivity tracker</div>
   </div>
+
+  <div class="app-version" data-version></div>
 </header>
+
 
 <div id="content">
 
@@ -44,7 +67,11 @@
 
     <div id="view-track" class="view active">
 
-      <div id="active-card" class="card" style="display:none;">
+      <div
+        id="active-card"
+        class="card"
+        style="display:none;"
+      >
 
         <div id="timer-display">
 
@@ -52,7 +79,10 @@
             recording
           </div>
 
-          <div class="time" id="elapsed-display">
+          <div
+            class="time"
+            id="elapsed-display"
+          >
             0s
           </div>
 
@@ -86,7 +116,10 @@
       </div>
 
 
-      <div id="new-entry-card" class="card">
+      <div
+        id="new-entry-card"
+        class="card"
+      >
 
         <div class="section-label">
           new entry
@@ -166,8 +199,6 @@
 
     <div id="view-insights" class="view">
 
-      <!-- Selected day -->
-
       <div class="card">
 
         <div class="insights-date-nav">
@@ -213,8 +244,6 @@
       </div>
 
 
-      <!-- Daily breakdown -->
-
       <div class="card">
 
         <div class="section-label">
@@ -225,8 +254,6 @@
 
       </div>
 
-
-      <!-- Weekly breakdown -->
 
       <div class="card">
 
@@ -247,8 +274,6 @@
 
       </div>
 
-
-      <!-- All time -->
 
       <div class="card">
 
@@ -301,6 +326,11 @@
   </button>
 
 </nav>
+
+
+<footer class="app-footer">
+  timelog <span data-version></span>
+</footer>
 
 
 <script src="script.js"></script>
