@@ -52,10 +52,6 @@ let selectedCat = 'deep';
 
 let timerInterval = null;
 
-/*
- * The date currently being viewed on the Insights page.
- * It starts at today.
- */
 let insightDate = new Date();
 
 
@@ -104,7 +100,6 @@ function fmtTime(ts) {
       minute: '2-digit'
     }
   );
-
 }
 
 
@@ -118,7 +113,6 @@ function fmtDate(ts) {
       day: 'numeric'
     }
   );
-
 }
 
 
@@ -179,19 +173,18 @@ function getStartOfWeek(date) {
 
   const day = d.getDay();
 
-  /*
-   * Sunday = 0
-   * Monday = 1
-   */
-
   const difference =
-    day === 0 ? -6 : 1 - day;
+    day === 0
+      ? -6
+      : 1 - day;
 
   d.setDate(
     d.getDate() + difference
   );
 
-  d.setHours(0, 0, 0, 0);
+  d.setHours(
+    0, 0, 0, 0
+  );
 
   return d;
 
@@ -230,7 +223,9 @@ function formatShortDate(date) {
 function buildPills() {
 
   const container =
-    document.getElementById('cat-pills');
+    document.getElementById(
+      'cat-pills'
+    );
 
   container.innerHTML = '';
 
@@ -262,7 +257,8 @@ function buildPills() {
 
     pill.onclick = () => {
 
-      selectedCat = cat.id;
+      selectedCat =
+        cat.id;
 
       buildPills();
 
@@ -314,12 +310,14 @@ function stopTimer() {
 
   if (!active) return;
 
-  const end = Date.now();
+  const end =
+    Date.now();
 
   const entry = {
     ...active,
     end,
-    duration: end - active.start,
+    duration:
+      end - active.start,
     id: end
   };
 
@@ -333,7 +331,9 @@ function stopTimer() {
     'timelog-active'
   );
 
-  clearInterval(timerInterval);
+  clearInterval(
+    timerInterval
+  );
 
   document
     .getElementById('entry-label')
@@ -346,7 +346,9 @@ function stopTimer() {
 
 function deleteEntry(id) {
 
-  if (!confirm('Delete this entry?')) {
+  if (!confirm(
+    'Delete this entry?'
+  )) {
     return;
   }
 
@@ -364,7 +366,9 @@ function deleteEntry(id) {
 
 function startTick() {
 
-  clearInterval(timerInterval);
+  clearInterval(
+    timerInterval
+  );
 
   timerInterval =
     setInterval(() => {
@@ -380,7 +384,8 @@ function startTick() {
 
         el.textContent =
           fmtDur(
-            Date.now() - active.start
+            Date.now() -
+            active.start
           );
 
       }
@@ -421,13 +426,17 @@ function renderTrack() {
       'none';
 
     const cat =
-      getCat(active.category);
+      getCat(
+        active.category
+      );
 
     activeCard.style.borderColor =
       cat.color;
 
     document
-      .getElementById('pulse-dot')
+      .getElementById(
+        'pulse-dot'
+      )
       .style.background =
       cat.color;
 
@@ -451,12 +460,11 @@ function renderTrack() {
       )
       .textContent =
       fmtDur(
-        Date.now() - active.start
+        Date.now() -
+        active.start
       );
 
-  }
-
-  else {
+  } else {
 
     activeCard.style.display =
       'none';
@@ -474,6 +482,7 @@ function renderTrack() {
       new Date()
     );
 
+
   if (!todayEntries.length) {
 
     todayCard.style.display =
@@ -483,11 +492,15 @@ function renderTrack() {
 
   }
 
+
   todayCard.style.display =
     'block';
 
+
   document
-    .getElementById('today-total')
+    .getElementById(
+      'today-total'
+    )
     .textContent =
     fmtDur(
       todayEntries.reduce(
@@ -511,10 +524,14 @@ function renderTrack() {
     .forEach(entry => {
 
       const cat =
-        getCat(entry.category);
+        getCat(
+          entry.category
+        );
 
       const div =
-        document.createElement('div');
+        document.createElement(
+          'div'
+        );
 
       div.className =
         'today-entry';
@@ -553,7 +570,9 @@ function renderTrack() {
 
       `;
 
-      container.appendChild(div);
+      container.appendChild(
+        div
+      );
 
     });
 
@@ -614,14 +633,18 @@ function renderLog() {
 
 
         const group =
-          document.createElement('div');
+          document.createElement(
+            'div'
+          );
 
         group.className =
           'day-group';
 
 
         const header =
-          document.createElement('div');
+          document.createElement(
+            'div'
+          );
 
         header.className =
           'day-header';
@@ -631,11 +654,15 @@ function renderLog() {
           <span>${fmtDur(total)}</span>
         `;
 
-        group.appendChild(header);
+        group.appendChild(
+          header
+        );
 
 
         const card =
-          document.createElement('div');
+          document.createElement(
+            'div'
+          );
 
         card.className =
           'card log-card';
@@ -644,10 +671,14 @@ function renderLog() {
         dayEntries.forEach(entry => {
 
           const cat =
-            getCat(entry.category);
+            getCat(
+              entry.category
+            );
 
           const div =
-            document.createElement('div');
+            document.createElement(
+              'div'
+            );
 
           div.className =
             'entry';
@@ -655,7 +686,10 @@ function renderLog() {
           div.innerHTML = `
 
             <div
-              class="entry-bar category-entry-bar"
+              class="
+                entry-bar
+                category-entry-bar
+              "
               style="
                 --category-color:${cat.color};
               "
@@ -695,14 +729,20 @@ function renderLog() {
 
           `;
 
-          card.appendChild(div);
+          card.appendChild(
+            div
+          );
 
         });
 
 
-        group.appendChild(card);
+        group.appendChild(
+          card
+        );
 
-        container.appendChild(group);
+        container.appendChild(
+          group
+        );
 
       }
     );
@@ -724,11 +764,6 @@ function changeInsightDay(amount) {
   );
 
 
-  /*
-   * Don't allow navigation
-   * into the future.
-   */
-
   const today =
     new Date();
 
@@ -746,7 +781,8 @@ function changeInsightDay(amount) {
   }
 
 
-  insightDate = newDate;
+  insightDate =
+    newDate;
 
   renderInsights();
 
@@ -759,6 +795,7 @@ function renderSelectedDay() {
     getEntriesForDay(
       insightDate
     );
+
 
   const total =
     entriesForDay.reduce(
@@ -789,9 +826,7 @@ function renderSelectedDay() {
     labelEl.textContent =
       'TODAY';
 
-  }
-
-  else {
+  } else {
 
     labelEl.textContent =
       insightDate
@@ -825,7 +860,8 @@ function renderSelectedDay() {
     );
 
 
-  previousBtn.disabled = false;
+  previousBtn.disabled =
+    false;
 
   nextBtn.disabled =
     isSameDay(
@@ -881,7 +917,8 @@ function renderSelectedDay() {
 
       })
       .filter(
-        cat => cat.total > 0
+        cat =>
+          cat.total > 0
       );
 
 
@@ -891,7 +928,9 @@ function renderSelectedDay() {
   cats.forEach(cat => {
 
     const div =
-      document.createElement('div');
+      document.createElement(
+        'div'
+      );
 
     div.className =
       'bar-row';
@@ -905,9 +944,7 @@ function renderSelectedDay() {
           ${cat.label}
         </span>
 
-        <span
-          class="bar-value"
-        >
+        <span class="bar-value">
           ${fmtDur(cat.total)}
           ·
           ${cat.pct}%
@@ -930,22 +967,30 @@ function renderSelectedDay() {
 
     `;
 
-    barsEl.appendChild(div);
+    barsEl.appendChild(
+      div
+    );
 
   });
 
 
   const hr =
-    document.createElement('hr');
+    document.createElement(
+      'hr'
+    );
 
   hr.className =
     'divider';
 
-  barsEl.appendChild(hr);
+  barsEl.appendChild(
+    hr
+  );
 
 
   const row =
-    document.createElement('div');
+    document.createElement(
+      'div'
+    );
 
   row.className =
     'total-row';
@@ -962,7 +1007,9 @@ function renderSelectedDay() {
 
   `;
 
-  barsEl.appendChild(row);
+  barsEl.appendChild(
+    row
+  );
 
 
   setTimeout(() => {
@@ -1003,7 +1050,11 @@ function renderWeeklyBreakdown() {
   const days = [];
 
 
-  for (let i = 0; i < 7; i++) {
+  for (
+    let i = 0;
+    i < 7;
+    i++
+  ) {
 
     const date =
       new Date(start);
@@ -1012,7 +1063,9 @@ function renderWeeklyBreakdown() {
       start.getDate() + i
     );
 
-    days.push(date);
+    days.push(
+      date
+    );
 
   }
 
@@ -1021,7 +1074,9 @@ function renderWeeklyBreakdown() {
     days.map(day => {
 
       const dayEntries =
-        getEntriesForDay(day);
+        getEntriesForDay(
+          day
+        );
 
       return dayEntries.reduce(
         (sum, entry) =>
@@ -1063,14 +1118,11 @@ function renderWeeklyBreakdown() {
   }
 
 
-  /*
-   * Find the largest day.
-   * This determines the full width
-   * of the weekly bars.
-   */
-
   const maxTotal =
-    Math.max(...totals, 1);
+    Math.max(
+      ...totals,
+      1
+    );
 
 
   container.innerHTML = '';
@@ -1084,11 +1136,15 @@ function renderWeeklyBreakdown() {
 
 
       const dayEntries =
-        getEntriesForDay(day);
+        getEntriesForDay(
+          day
+        );
 
 
       const row =
-        document.createElement('div');
+        document.createElement(
+          'div'
+        );
 
       row.className =
         'weekly-row';
@@ -1102,61 +1158,62 @@ function renderWeeklyBreakdown() {
 
 
       if (isSelected) {
+
         row.classList.add(
           'selected-week-day'
         );
+
       }
 
-
-      /*
-       * Build a segmented bar,
-       * one segment per category.
-       */
 
       let segments = '';
 
 
       if (dayTotal > 0) {
 
-        CATEGORIES.forEach(cat => {
+        CATEGORIES.forEach(
+          cat => {
 
-          const categoryTotal =
-            dayEntries
-              .filter(
-                entry =>
-                  entry.category === cat.id
-              )
-              .reduce(
-                (sum, entry) =>
-                  sum + entry.duration,
-                0
-              );
+            const categoryTotal =
+              dayEntries
+                .filter(
+                  entry =>
+                    entry.category ===
+                    cat.id
+                )
+                .reduce(
+                  (sum, entry) =>
+                    sum +
+                    entry.duration,
+                  0
+                );
 
 
-          if (!categoryTotal) {
-            return;
+            if (!categoryTotal) {
+              return;
+            }
+
+
+            const width =
+              categoryTotal /
+              dayTotal *
+              100;
+
+
+            segments += `
+
+              <div
+                class="weekly-segment"
+                style="
+                  width:${width}%;
+                  background:${cat.color};
+                "
+              ></div>
+
+            `;
+
           }
-
-
-          const width =
-            categoryTotal /
-            dayTotal *
-            100;
-
-
-          segments += `
-
-            <div
-              class="weekly-segment"
-              style="
-                width:${width}%;
-                background:${cat.color};
-              "
-            ></div>
-
-          `;
-
-        });
+        );
 
       }
 
@@ -1214,7 +1271,9 @@ function renderWeeklyBreakdown() {
       `;
 
 
-      container.appendChild(row);
+      container.appendChild(
+        row
+      );
 
     }
   );
@@ -1257,11 +1316,13 @@ function renderAllTimeStats() {
           entries
             .filter(
               entry =>
-                entry.category === cat.id
+                entry.category ===
+                cat.id
             )
             .reduce(
               (sum, entry) =>
-                sum + entry.duration,
+                sum +
+                entry.duration,
               0
             )
 
@@ -1286,7 +1347,8 @@ function renderAllTimeStats() {
 
       {
         label: 'Total entries',
-        value: entries.length || '—'
+        value:
+          entries.length || '—'
       },
 
       {
@@ -1305,7 +1367,8 @@ function renderAllTimeStats() {
 
       {
         label: 'Top category',
-        value: topCat
+        value:
+          topCat
       }
 
     ]
@@ -1368,14 +1431,18 @@ function switchView(v, btn) {
   document
     .querySelectorAll('.view')
     .forEach(el =>
-      el.classList.remove('active')
+      el.classList.remove(
+        'active'
+      )
     );
 
 
   document
     .querySelectorAll('.nav-btn')
     .forEach(el =>
-      el.classList.remove('active')
+      el.classList.remove(
+        'active'
+      )
     );
 
 
@@ -1383,15 +1450,96 @@ function switchView(v, btn) {
     .getElementById(
       'view-' + v
     )
-    .classList.add('active');
+    .classList.add(
+      'active'
+    );
 
 
-  btn.classList.add('active');
+  btn.classList.add(
+    'active'
+  );
 
 
   document
-    .getElementById('content')
+    .getElementById(
+      'content'
+    )
     .scrollTop = 0;
+
+}
+
+
+/* ==================================================
+   VERSION
+   ================================================== */
+
+async function loadVersion() {
+  try {
+    const response = await fetch('version.json', {
+      cache: 'no-store'
+    });
+
+    if (!response.ok) {
+      throw new Error('Could not load version.json');
+    }
+
+    const data = await response.json();
+
+    document.querySelectorAll('[data-version]').forEach(el => {
+      el.textContent = `v${data.version}`;
+    });
+  } catch (error) {
+    console.error('Could not load app version:', error);
+  }
+}
+
+
+/* ==================================================
+   SERVICE WORKER
+   ================================================== */
+
+function registerServiceWorker() {
+
+  if (
+    'serviceWorker' in navigator
+  ) {
+
+    window.addEventListener(
+      'load',
+      async () => {
+
+        try {
+
+          const registration =
+            await navigator.serviceWorker.register(
+              'sw.js'
+            );
+
+          console.log(
+            'Service worker registered:',
+            registration.scope
+          );
+
+          /*
+           * Ask the browser to check whether
+           * a newer service worker is available.
+           */
+
+          await registration.update();
+
+        } catch (error) {
+
+          console.error(
+            'Service worker registration failed:',
+            error
+          );
+
+        }
+
+      }
+    );
+
+  }
 
 }
 
@@ -1403,6 +1551,10 @@ function switchView(v, btn) {
 buildPills();
 
 renderAll();
+
+loadVersion();
+
+registerServiceWorker();
 
 if (active) {
   startTick();
