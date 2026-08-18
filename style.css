@@ -140,31 +140,69 @@ main {
   margin: 0 auto;
 
   padding:
-    20px 16px 40px;
+    20px 16px
+    calc(110px + env(safe-area-inset-bottom));
 }
 
 
 /* ==================================================
-   NAVIGATION
+   LIQUID GLASS NAVIGATION
    ================================================== */
 
-nav {
-  background: var(--surface);
+nav.bottom-nav {
+  position: fixed;
 
-  border-top:
-    1px solid var(--border);
+  left: 50%;
+  bottom: calc(14px + env(safe-area-inset-bottom));
+
+  transform: translateX(-50%);
+
+  width: min(360px, calc(100% - 32px));
+
+  height: 64px;
 
   display: flex;
+  align-items: center;
+
+  padding: 6px;
+
+  background:
+    rgba(30, 34, 41, 0.72);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.10);
+
+  border-radius: 24px;
+
+  box-shadow:
+    0 12px 35px rgba(0, 0, 0, 0.38),
+    0 2px 8px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  backdrop-filter:
+    blur(24px)
+    saturate(150%);
+
+  -webkit-backdrop-filter:
+    blur(24px)
+    saturate(150%);
+
+  z-index: 100;
 
   flex-shrink: 0;
-
-  padding-bottom:
-    env(safe-area-inset-bottom);
 }
 
 
+/* ==================================================
+   NAV BUTTON
+   ================================================== */
+
 .nav-btn {
+  position: relative;
+
   flex: 1;
+
+  height: 52px;
 
   display: flex;
   flex-direction: column;
@@ -172,11 +210,7 @@ nav {
   align-items: center;
   justify-content: center;
 
-  padding: 10px 0;
-
-  gap: 4px;
-
-  cursor: pointer;
+  gap: 3px;
 
   border: none;
 
@@ -186,28 +220,180 @@ nav {
 
   font-family: inherit;
 
-  font-size: 10px;
+  cursor: pointer;
 
-  letter-spacing: 1px;
+  border-radius: 19px;
+
+  transition:
+    color 0.2s ease,
+    transform 0.15s ease;
+
+  touch-action: manipulation;
+  user-select: none;
+}
+
+
+/* ==================================================
+   ACTIVE GLASS TAB
+   ================================================== */
+
+.nav-btn.active {
+  color: var(--text);
+
+  background:
+    rgba(255, 255, 255, 0.09);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+
+/* subtle accent glow behind active tab */
+
+.nav-btn.active::before {
+  content: "";
+
+  position: absolute;
+
+  top: 5px;
+
+  left: 50%;
+
+  width: 22px;
+  height: 3px;
+
+  transform: translateX(-50%);
+
+  background: var(--accent);
+
+  border-radius: 999px;
+
+  opacity: 0.9;
+
+  filter: blur(0.5px);
+}
+
+
+/* ==================================================
+   ICON
+   ================================================== */
+
+.nav-icon {
+  width: 22px;
+  height: 22px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-icon svg {
+  width: 20px;
+  height: 20px;
+
+  fill: none;
+
+  stroke: currentColor;
+
+  stroke-width: 1.7;
+
+  stroke-linecap: round;
+  stroke-linejoin: round;
+
+  transition:
+    transform 0.2s ease,
+    stroke-width 0.2s ease;
+}
+
+.nav-btn.active .nav-icon svg {
+  stroke-width: 2;
+}
+
+
+/* ==================================================
+   LABEL
+   ================================================== */
+
+.nav-label {
+  font-size: 9px;
+
+  letter-spacing: 0.5px;
+
+  line-height: 1;
 
   text-transform: uppercase;
 
   transition:
-    color 0.15s;
-
-  touch-action: manipulation;
+    opacity 0.2s ease;
 }
 
 
-.nav-btn.active {
-  color: var(--accent);
+/* ==================================================
+   INTERACTION
+   ================================================== */
+
+.nav-btn:active {
+  transform: scale(0.94);
+}
+
+.nav-btn.active:active {
+  transform: scale(0.96);
 }
 
 
-.nav-btn .nav-icon {
-  font-size: 20px;
+/* ==================================================
+   GLASS FALLBACK
+   ================================================== */
 
-  line-height: 1;
+@supports not (
+  backdrop-filter: blur(24px)
+) {
+
+  nav.bottom-nav {
+    background:
+      rgba(23, 26, 32, 0.96);
+  }
+
+}
+
+
+/* ==================================================
+   DESKTOP
+   ================================================== */
+
+@media (min-width: 700px) {
+
+  nav.bottom-nav {
+    bottom: 24px;
+  }
+
+}
+
+
+/* ==================================================
+   SMALL MOBILE
+   ================================================== */
+
+@media (max-width: 380px) {
+
+  nav.bottom-nav {
+    width: calc(100% - 24px);
+
+    height: 60px;
+
+    bottom:
+      calc(10px + env(safe-area-inset-bottom));
+
+    border-radius: 22px;
+  }
+
+  .nav-btn {
+    height: 48px;
+
+    border-radius: 17px;
+  }
+
 }
 
 

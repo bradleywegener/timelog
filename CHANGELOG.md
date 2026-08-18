@@ -2,13 +2,20 @@
 
 All notable changes to timelog are documented here.
 
+## [0.1.3]
+
+### Changed
+- Navigation menu now liquid glass style
+
 ## [0.1.2] - 2026-08-13
 
-## Added
+### Added
 - CHANGELOG.md for documenting changes additions, changes and fixes in new versions.
 
 ### Fixed
 - Incorrect icon names. 
+
+---
 
 ## [0.1.0] - 2026-08-13
 
