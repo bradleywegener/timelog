@@ -54,6 +54,63 @@ let timerInterval = null;
 
 let insightDate = new Date();
 
+/* ==================================================
+   THEME
+   ================================================== */
+
+function applyTheme(theme) {
+
+  document.documentElement.dataset.theme = theme;
+
+  localStorage.setItem(
+    'timelog-theme',
+    theme
+  );
+
+}
+
+
+function toggleTheme() {
+
+  const currentTheme =
+    document.documentElement.dataset.theme
+    || 'dark';
+
+  const newTheme =
+    currentTheme === 'dark'
+      ? 'light'
+      : 'dark';
+
+  applyTheme(newTheme);
+
+}
+
+
+function initialiseTheme() {
+
+  const savedTheme =
+    localStorage.getItem(
+      'timelog-theme'
+    );
+
+  if (
+    savedTheme === 'light'
+    || savedTheme === 'dark'
+  ) {
+
+    applyTheme(savedTheme);
+
+    return;
+
+  }
+
+
+  /* Default to dark mode */
+
+  applyTheme('dark');
+
+}
+
 
 /* ==================================================
    HELPERS
@@ -1547,6 +1604,8 @@ function registerServiceWorker() {
 /* ==================================================
    INITIALISE
    ================================================== */
+
+initialiseTheme();
 
 buildPills();
 

@@ -20,9 +20,9 @@ body {
 
 
 body {
-  background: #0F1115;
+  background: var(--background);
 
-  color: #E6EDF3;
+  color: var(--text);
 
   font-family:
     'DM Mono',
@@ -37,6 +37,10 @@ body {
 
   padding-bottom:
     env(safe-area-inset-bottom);
+
+  transition:
+    background 0.25s ease,
+    color 0.25s ease;
 }
 
 
@@ -45,6 +49,8 @@ body {
    ================================================== */
 
 :root {
+
+  /* Dark mode */
 
   --background: #0F1115;
 
@@ -70,6 +76,55 @@ body {
 
   --danger: #C96A6A;
 
+  --nav-glass: rgba(30, 34, 41, 0.72);
+
+  --nav-border: rgba(255, 255, 255, 0.10);
+
+  --nav-highlight: rgba(255, 255, 255, 0.08);
+
+  --shadow:
+    rgba(0, 0, 0, 0.38);
+}
+
+
+/* ==================================================
+   LIGHT MODE
+   ================================================== */
+
+html[data-theme="light"] {
+
+  --background: #F5F7F6;
+
+  --surface: #FFFFFF;
+
+  --surface-raised: #F9FAFA;
+
+  --surface-input: #F0F3F2;
+
+  --border: #DDE3E0;
+
+  --border-light: #CBD4D0;
+
+  --text: #17201C;
+
+  --text-secondary: #68736E;
+
+  --text-muted: #9AA39F;
+
+  --accent: #31835F;
+
+  --accent-soft: rgba(49, 131, 95, 0.10);
+
+  --danger: #C35F5F;
+
+  --nav-glass: rgba(255, 255, 255, 0.72);
+
+  --nav-border: rgba(0, 0, 0, 0.08);
+
+  --nav-highlight: rgba(255, 255, 255, 0.75);
+
+  --shadow:
+    rgba(25, 35, 30, 0.16);
 }
 
 
@@ -116,6 +171,101 @@ header {
   color: var(--text-secondary);
 
   margin-top: 2px;
+}
+
+/* ==================================================
+   THEME TOGGLE
+   ================================================== */
+
+.header-actions {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+}
+
+
+.theme-toggle {
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border:
+    1px solid var(--border);
+
+  border-radius: 50%;
+
+  background:
+    var(--surface-raised);
+
+  color:
+    var(--text-secondary);
+
+  cursor: pointer;
+
+  padding: 0;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease;
+
+  touch-action: manipulation;
+}
+
+
+.theme-toggle:hover {
+  color: var(--text);
+
+  border-color:
+    var(--border-light);
+}
+
+
+.theme-toggle:active {
+  transform: scale(0.9);
+}
+
+
+.theme-icon {
+  width: 16px;
+  height: 16px;
+
+  fill: none;
+
+  stroke: currentColor;
+
+  stroke-width: 1.7;
+
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+
+/* Dark mode → show sun */
+
+.theme-icon-sun {
+  display: block;
+}
+
+.theme-icon-moon {
+  display: none;
+}
+
+
+/* Light mode → show moon */
+
+html[data-theme="light"] .theme-icon-sun {
+  display: none;
+}
+
+html[data-theme="light"] .theme-icon-moon {
+  display: block;
 }
 
 
@@ -166,11 +316,10 @@ nav.bottom-nav {
 
   padding: 6px;
 
-  background:
-    rgba(30, 34, 41, 0.72);
+  background: var(--nav-glass);
 
   border:
-    1px solid rgba(255, 255, 255, 0.10);
+    1px solid var(--nav-border);
 
   border-radius: 24px;
 
@@ -241,7 +390,7 @@ nav.bottom-nav {
   color: var(--text);
 
   background:
-    rgba(255, 255, 255, 0.09);
+    var(--nav-highlight);
 
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),

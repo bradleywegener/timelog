@@ -2,7 +2,14 @@
 
 All notable changes to timelog are documented here.
 
-## [0.1.3]
+## [0.1.4] - 2026-08-19
+
+### Added
+- Light mode
+
+---
+
+## [0.1.3] - 2026-08-19
 
 ### Changed
 - Navigation menu now liquid glass style
