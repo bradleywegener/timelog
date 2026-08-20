@@ -4,32 +4,38 @@
 
 const CATEGORIES = [
   {
-    id: 'deep',
-    label: 'Deep Work',
+    id: 'focus',
+    label: 'Focus',
     color: '#5FB38A',
-    emoji: '🧠'
+    emoji: '🎯'
   },
   {
-    id: 'shallow',
-    label: 'Shallow Work',
+    id: 'admin',
+    label: 'Admin',
     color: '#82B98A',
     emoji: '📋'
   },
   {
-    id: 'maintenance',
-    label: 'Maintenance',
+    id: 'life',
+    label: 'Life',
     color: '#C7A85A',
-    emoji: '🔧'
+    emoji: '🏠'
   },
   {
-    id: 'rest',
-    label: 'Rest & Leisure',
+    id: 'leisure',
+    label: 'Leisure',
     color: '#5B9BC7',
     emoji: '🌿'
   },
   {
+    id: 'sleep',
+    label: 'Sleep',
+    color: '#8274B8',
+    emoji: '😴'
+  },
+  {
     id: 'wasted',
-    label: 'Wasted Time',
+    label: 'Wasted',
     color: '#C96A6A',
     emoji: '⏳'
   }
@@ -48,11 +54,21 @@ let active = JSON.parse(
   localStorage.getItem('timelog-active') || 'null'
 );
 
-let selectedCat = 'deep';
+let selectedCat = 'focus';
 
 let timerInterval = null;
 
 let insightDate = new Date();
+
+const UNTRACKED_GRACE_MS = 30 * 1000;
+
+let untrackedEntries = JSON.parse(
+  localStorage.getItem('timelog-untracked') || '[]'
+);
+
+let untrackedActive = JSON.parse(
+  localStorage.getItem('timelog-untracked-active') || 'null'
+);
 
 /* ==================================================
    THEME
@@ -60,12 +76,27 @@ let insightDate = new Date();
 
 function applyTheme(theme) {
 
-  document.documentElement.dataset.theme = theme;
+  document.documentElement.dataset.theme =
+    theme;
 
   localStorage.setItem(
     'timelog-theme',
     theme
   );
+
+  const themeLabel =
+    document.getElementById(
+      'theme-label'
+    );
+
+  if (themeLabel) {
+
+    themeLabel.textContent =
+      theme === 'dark'
+        ? 'Dark mode'
+        : 'Light mode';
+
+  }
 
 }
 
@@ -108,6 +139,77 @@ function initialiseTheme() {
   /* Default to dark mode */
 
   applyTheme('dark');
+
+}
+
+/* ==================================================
+   MENU
+   ================================================== */
+
+function toggleMenu() {
+
+  const menu =
+    document.getElementById('app-menu');
+
+  const backdrop =
+    document.getElementById('menu-backdrop');
+
+  const button =
+    document.getElementById('menu-toggle');
+
+  const isOpen =
+    menu.classList.contains('open');
+
+  if (isOpen) {
+    closeMenu();
+    return;
+  }
+
+  menu.classList.add('open');
+
+  backdrop.classList.add('open');
+
+  button.classList.add('open');
+
+  button.setAttribute(
+    'aria-expanded',
+    'true'
+  );
+
+  menu.setAttribute(
+    'aria-hidden',
+    'false'
+  );
+
+}
+
+
+function closeMenu() {
+
+  const menu =
+    document.getElementById('app-menu');
+
+  const backdrop =
+    document.getElementById('menu-backdrop');
+
+  const button =
+    document.getElementById('menu-toggle');
+
+  menu.classList.remove('open');
+
+  backdrop.classList.remove('open');
+
+  button.classList.remove('open');
+
+  button.setAttribute(
+    'aria-expanded',
+    'false'
+  );
+
+  menu.setAttribute(
+    'aria-hidden',
+    'true'
+  );
 
 }
 
@@ -189,6 +291,26 @@ function saveEntries() {
 
 }
 
+function saveUntrackedEntries() {
+  localStorage.setItem(
+    'timelog-untracked',
+    JSON.stringify(untrackedEntries)
+  );
+}
+
+function saveUntrackedActive() {
+  if (untrackedActive) {
+    localStorage.setItem(
+      'timelog-untracked-active',
+      JSON.stringify(untrackedActive)
+    );
+  } else {
+    localStorage.removeItem(
+      'timelog-untracked-active'
+    );
+  }
+}
+
 
 /* ==================================================
    DATE HELPERS
@@ -221,6 +343,17 @@ function getEntriesForDay(date) {
     )
   );
 
+}
+
+function getUntrackedEntriesForDay(date) {
+
+  return untrackedEntries.filter(
+    entry =>
+      isSameDay(
+        new Date(entry.start),
+        date
+      )
+  );
 }
 
 
@@ -327,12 +460,96 @@ function buildPills() {
 
 }
 
+/* ==================================================
+   UNTRACKED TIME
+   ================================================== */
+
+function startUntracked(startTime) {
+
+  untrackedActive = {
+    start: startTime
+  };
+
+  saveUntrackedActive();
+}
+
+
+function finishUntracked(endTime) {
+
+  if (!untrackedActive) {
+    return;
+  }
+
+  const duration =
+    endTime -
+    untrackedActive.start;
+
+  if (duration <= 0) {
+    untrackedActive = null;
+    saveUntrackedActive();
+    return;
+  }
+
+  untrackedEntries.unshift({
+    id: Date.now(),
+    start: untrackedActive.start,
+    end: endTime,
+    duration,
+    label: null,
+    category: null
+  });
+
+  saveUntrackedEntries();
+
+  untrackedActive = null;
+
+  saveUntrackedActive();
+}
+
+
+function resolveUntrackedForNewActivity(startTime) {
+
+  if (!untrackedActive) {
+    return startTime;
+  }
+
+  const gap =
+    startTime -
+    untrackedActive.start;
+
+  /*
+   * Short gap:
+   * absorb it into the new activity.
+   */
+  if (gap < UNTRACKED_GRACE_MS) {
+
+    const originalStart =
+      untrackedActive.start;
+
+    untrackedActive = null;
+
+    saveUntrackedActive();
+
+    return originalStart;
+  }
+
+  /*
+   * Long gap:
+   * preserve it as an untracked entry.
+   */
+  finishUntracked(startTime);
+
+  return startTime;
+}
+
 
 /* ==================================================
    TIMER
    ================================================== */
 
 function startTimer() {
+
+  const actualStart = Date.now();
 
   const label =
     document
@@ -341,10 +558,15 @@ function startTimer() {
       .trim()
     || getCat(selectedCat).label;
 
+  const activityStart =
+    resolveUntrackedForNewActivity(
+      actualStart
+    );
+
   active = {
     category: selectedCat,
     label,
-    start: Date.now()
+    start: activityStart
   };
 
   localStorage.setItem(
@@ -359,16 +581,16 @@ function startTimer() {
   renderTrack();
 
   startTick();
-
 }
 
 
 function stopTimer() {
 
-  if (!active) return;
+  if (!active) {
+    return;
+  }
 
-  const end =
-    Date.now();
+  const end = Date.now();
 
   const entry = {
     ...active,
@@ -388,16 +610,21 @@ function stopTimer() {
     'timelog-active'
   );
 
-  clearInterval(
-    timerInterval
-  );
+  clearInterval(timerInterval);
 
   document
     .getElementById('entry-label')
     .value = '';
 
+  /*
+   * The moment a tracked activity ends,
+   * an untracked period begins.
+   */
+  startUntracked(end);
+
   renderAll();
 
+  startTick();
 }
 
 
@@ -421,16 +648,17 @@ function deleteEntry(id) {
 }
 
 
+/* ==================================================
+   TIMER TICK
+   ================================================== */
+
 function startTick() {
 
-  clearInterval(
-    timerInterval
-  );
+  clearInterval(timerInterval);
 
-  timerInterval =
-    setInterval(() => {
+  timerInterval = setInterval(() => {
 
-      if (!active) return;
+    if (active) {
 
       const el =
         document.getElementById(
@@ -447,7 +675,32 @@ function startTick() {
 
       }
 
-    }, 1000);
+    } else if (untrackedActive) {
+
+      const el =
+        document.getElementById(
+          'untracked-time'
+        );
+
+      if (el) {
+
+        el.textContent =
+          fmtDur(
+            Date.now() -
+            untrackedActive.start
+          );
+
+      }
+
+    }
+
+    /*
+     * Keep the header timer in sync.
+     */
+
+    renderHeaderActivity();
+
+  }, 1000);
 
 }
 
@@ -531,6 +784,67 @@ function renderTrack() {
 
     buildPills();
 
+    if (untrackedActive) {
+
+      const elapsed =
+        Date.now() -
+        untrackedActive.start;
+
+      /*
+      * The existing new-entry card remains
+      * usable, but we'll show the current
+      * untracked duration above it.
+      */
+
+      let untrackedDisplay =
+        document.getElementById(
+          'untracked-display'
+        );
+
+      if (!untrackedDisplay) {
+
+        untrackedDisplay =
+          document.createElement('div');
+
+        untrackedDisplay.id =
+          'untracked-display';
+
+        untrackedDisplay.className =
+          'untracked-display';
+
+        newCard.insertBefore(
+          untrackedDisplay,
+          newCard.firstChild
+        );
+      }
+
+      untrackedDisplay.innerHTML = `
+
+        <div class="section-label">
+          untracked
+        </div>
+
+        <div class="untracked-time" id="untracked-time">
+          ${fmtDur(elapsed)}
+        </div>
+
+        <div class="untracked-meta">
+          Since ${fmtTime(untrackedActive.start)}
+        </div>
+
+      `;
+
+    } else {
+
+      const existing =
+        document.getElementById(
+          'untracked-display'
+        );
+
+      if (existing) {
+        existing.remove();
+      }
+    }
   }
 
 
@@ -635,6 +949,131 @@ function renderTrack() {
 
 }
 
+/* ==================================================
+   HEADER ACTIVITY
+   ================================================== */
+
+function renderHeaderActivity() {
+
+  const activity =
+    document.getElementById(
+      'header-activity'
+    );
+
+  const name =
+    document.getElementById(
+      'header-activity-name'
+    );
+
+  const meta =
+    document.getElementById(
+      'header-activity-meta'
+    );
+
+  const timer =
+    document.getElementById(
+      'header-activity-timer'
+    );
+
+
+  /*
+   * Active tracked activity
+   */
+
+  if (active) {
+
+    const cat =
+      getCat(active.category);
+
+    activity.classList.add(
+      'visible'
+    );
+
+    activity.classList.remove(
+      'untracked'
+    );
+
+
+    /*
+     * If the user supplied a custom
+     * label, show it.
+     *
+     * Otherwise leave the name blank.
+     */
+
+    const defaultLabel =
+      cat.label;
+
+    const hasCustomLabel =
+      active.label &&
+      active.label !== defaultLabel;
+
+
+    name.textContent =
+      hasCustomLabel
+        ? active.label
+        : '';
+
+
+    meta.textContent =
+      cat.emoji +
+      ' ' +
+      cat.label;
+
+
+    timer.textContent =
+      fmtDur(
+        Date.now() -
+        active.start
+      );
+
+    return;
+  }
+
+
+  /*
+   * No tracked activity.
+   * Show untracked time if there
+   * is currently an untracked period.
+   */
+
+  if (untrackedActive) {
+
+    activity.classList.add(
+      'visible',
+      'untracked'
+    );
+
+
+    name.textContent =
+      'Untracked';
+
+
+    meta.textContent =
+      '';
+
+
+    timer.textContent =
+      fmtDur(
+        Date.now() -
+        untrackedActive.start
+      );
+
+    return;
+  }
+
+
+  /*
+   * Nothing happening.
+   */
+
+  activity.classList.remove(
+    'visible',
+    'untracked'
+  );
+
+}
+
 
 /* ==================================================
    LOG VIEW
@@ -647,7 +1086,7 @@ function renderLog() {
       'log-content'
     );
 
-  if (!entries.length) {
+  if (!entries.length && !untrackedEntries.length) {
 
     container.innerHTML =
       '<div class="empty">No entries yet. Start tracking!</div>';
@@ -660,7 +1099,22 @@ function renderLog() {
   const groups = {};
 
 
-  entries.forEach(entry => {
+  const allEntries = [
+    ...entries.map(entry => ({
+      ...entry,
+      type: 'tracked'
+    })),
+
+    ...untrackedEntries.map(entry => ({
+      ...entry,
+      type: 'untracked'
+    }))
+  ].sort(
+    (a, b) =>
+      b.start - a.start
+  );
+
+  allEntries.forEach(entry => {
 
     const date =
       fmtDate(entry.start);
@@ -727,10 +1181,17 @@ function renderLog() {
 
         dayEntries.forEach(entry => {
 
+          const isUntracked =
+            entry.type === 'untracked';
+
           const cat =
-            getCat(
-              entry.category
-            );
+            isUntracked
+              ? {
+                  label: 'Untracked',
+                  emoji: '⏱️',
+                  color: '#888888'
+                }
+              : getCat(entry.category);
 
           const div =
             document.createElement(
@@ -759,7 +1220,7 @@ function renderLog() {
             <div class="entry-info">
 
               <div class="entry-name">
-                ${entry.label}
+                ${isUntracked ? 'Untracked Time' : entry.label}
               </div>
 
               <div class="entry-meta">
@@ -853,14 +1314,28 @@ function renderSelectedDay() {
       insightDate
     );
 
+  const untrackedForDay =
+    getUntrackedEntriesForDay(
+      insightDate
+    );
 
-  const total =
+  const trackedTotal =
     entriesForDay.reduce(
       (sum, entry) =>
         sum + entry.duration,
       0
     );
 
+  const untrackedTotal =
+    untrackedForDay.reduce(
+      (sum, entry) =>
+        sum + entry.duration,
+      0
+    );
+
+  const total =
+    trackedTotal +
+    untrackedTotal;
 
   const labelEl =
     document.getElementById(
@@ -901,8 +1376,8 @@ function renderSelectedDay() {
 
 
   totalEl.textContent =
-    total > 0
-      ? fmtDur(total)
+    trackedTotal > 0
+      ? fmtDur(trackedTotal) + ' tracked'
       : 'No time tracked';
 
 
@@ -978,6 +1453,22 @@ function renderSelectedDay() {
           cat.total > 0
       );
 
+  if (untrackedTotal > 0) {
+
+    cats.push({
+      id: 'untracked',
+      label: 'Untracked',
+      emoji: '⏱️',
+      color: '#888888',
+      total: untrackedTotal,
+      pct: Math.round(
+        untrackedTotal /
+        total *
+        100
+      )
+    });
+
+  }
 
   barsEl.innerHTML = '';
 
@@ -1055,7 +1546,7 @@ function renderSelectedDay() {
   row.innerHTML = `
 
     <span class="total-label">
-      Total tracked
+      Total time
     </span>
 
     <span class="total-value">
@@ -1476,6 +1967,8 @@ function renderAll() {
 
   renderInsights();
 
+  renderHeaderActivity();
+
 }
 
 
@@ -1615,6 +2108,6 @@ loadVersion();
 
 registerServiceWorker();
 
-if (active) {
+if (active || untrackedActive) {
   startTick();
 }

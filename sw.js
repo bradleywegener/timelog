@@ -1,4 +1,4 @@
-const CACHE_NAME = 'timelog-v0.1.4';
+const CACHE_NAME = 'timelog-v0.2.0';
 
 const APP_FILES = [
   './',
