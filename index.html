@@ -48,48 +48,188 @@
 <body>
 
 <header>
-  <div>
-    <div class="logo">timelog</div>
-    <div class="logo-sub">personal productivity tracker</div>
+
+  <div class="header-brand">
+
+    <div class="logo">
+      timelog
+    </div>
+
+    <div class="logo-sub">
+      personal productivity tracker
+    </div>
+
   </div>
 
-  <div class="header-actions">
+
+  <div class="header-right">
+
+    <div
+      class="header-activity"
+      id="header-activity"
+    >
+
+      <div class="header-activity-status"></div>
+
+      <div class="header-activity-info">
+
+        <div
+          class="header-activity-name"
+          id="header-activity-name"
+        ></div>
+
+        <div
+          class="header-activity-meta"
+          id="header-activity-meta"
+        ></div>
+
+      </div>
+
+      <div
+        class="header-activity-timer"
+        id="header-activity-timer"
+      >
+        0s
+      </div>
+
+    </div>
+
+
+    <div class="header-actions">
+
+      <button
+        class="menu-toggle"
+        id="menu-toggle"
+        onclick="toggleMenu()"
+        aria-label="Open menu"
+        aria-expanded="false"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+    </div>
+
+  </div>
+
+</header>
+
+<!-- ==================================================
+     MENU
+     ================================================== -->
+
+<div
+  class="menu-backdrop"
+  id="menu-backdrop"
+  onclick="closeMenu()"
+></div>
+
+<div
+  class="app-menu"
+  id="app-menu"
+  aria-hidden="true"
+>
+
+  <div class="menu-section">
+
+    <div class="menu-item">
+      
+      <div class="menu-item-icon">
+        <svg
+          class="theme-icon theme-icon-sun"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2"></path>
+          <path d="M12 20v2"></path>
+          <path d="M4.93 4.93l1.41 1.41"></path>
+          <path d="M17.66 17.66l1.41 1.41"></path>
+          <path d="M2 12h2"></path>
+          <path d="M20 12h2"></path>
+          <path d="M4.93 19.07l1.41-1.41"></path>
+          <path d="M17.66 6.34l1.41-1.41"></path>
+        </svg>
+
+        <svg
+          class="theme-icon theme-icon-moon"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path d="M20.5 15.5A8.5 8.5 0 0 1 8.5 3.5a8.5 8.5 0 1 0 12 12z"></path>
+        </svg>
+      </div>
+
+      <div class="menu-item-text">
+        <div class="menu-item-title">Appearance</div>
+        <div
+          class="menu-item-subtitle"
+          id="theme-label"
+        >
+          Dark mode
+        </div>
+      </div>
+
+      <button
+        class="menu-switch"
+        id="theme-menu-toggle"
+        onclick="toggleTheme()"
+        aria-label="Toggle light and dark mode"
+      >
+        <span></span>
+      </button>
+
+    </div>
+
 
     <button
-      class="theme-toggle"
-      id="theme-toggle"
-      onclick="toggleTheme()"
-      aria-label="Toggle light and dark mode"
+      class="menu-item menu-item-button"
+      disabled
     >
-      <svg
-        class="theme-icon theme-icon-sun"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <circle cx="12" cy="12" r="4"></circle>
-        <path d="M12 2v2"></path>
-        <path d="M12 20v2"></path>
-        <path d="M4.93 4.93l1.41 1.41"></path>
-        <path d="M17.66 17.66l1.41 1.41"></path>
-        <path d="M2 12h2"></path>
-        <path d="M20 12h2"></path>
-        <path d="M4.93 19.07l1.41-1.41"></path>
-        <path d="M17.66 6.34l1.41-1.41"></path>
-      </svg>
 
-      <svg
-        class="theme-icon theme-icon-moon"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path d="M20.5 15.5A8.5 8.5 0 0 1 8.5 3.5a8.5 8.5 0 1 0 12 12z"></path>
-      </svg>
+      <div class="menu-item-icon">
+        <svg
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path d="M12 3l1.8 3.7 4.2.6-3 3 0.7 4.2-3.7-2-3.7 2 0.7-4.2-3-3 4.2-.6z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+      </div>
+
+      <div class="menu-item-text">
+        <div class="menu-item-title">Settings</div>
+        <div class="menu-item-subtitle">
+          Coming soon
+        </div>
+      </div>
+
+      <div class="menu-item-chevron">
+        ›
+      </div>
+
     </button>
 
-    <div class="app-version" data-version></div>
+  </div>
+
+
+  <div class="menu-section menu-about">
+
+    <div class="menu-version">
+
+      <span>timelog</span>
+
+      <span
+        class="menu-version-number"
+        data-version
+      ></span>
+
+    </div>
 
   </div>
-</header>
+
+</div>
 
 
 <div id="content">
@@ -392,6 +532,64 @@
 <footer class="app-footer">
   timelog <span data-version></span>
 </footer>
+
+<div
+  class="edit-modal-backdrop"
+  id="edit-modal-backdrop"
+  onclick="closeUntrackedEditor()"
+></div>
+
+<div
+  class="edit-modal"
+  id="edit-modal"
+>
+
+  <div class="edit-modal-title">
+    classify untracked time
+  </div>
+
+  <div class="edit-modal-time" id="edit-modal-time">
+  </div>
+
+  <div class="field-label">
+    category
+  </div>
+
+  <div
+    class="cat-pills edit-cat-pills"
+    id="edit-cat-pills"
+  ></div>
+
+  <div class="field-label">
+    what were you doing? (optional)
+  </div>
+
+  <input
+    type="text"
+    id="edit-entry-label"
+    placeholder="e.g. Grocery shopping"
+    autocomplete="off"
+  >
+
+  <div class="edit-modal-actions">
+
+    <button
+      class="btn btn-secondary"
+      onclick="closeUntrackedEditor()"
+    >
+      Cancel
+    </button>
+
+    <button
+      class="btn btn-start"
+      onclick="saveUntrackedClassification()"
+    >
+      Save
+    </button>
+
+  </div>
+
+</div>
 
 
 <script src="script.js"></script>

@@ -2,6 +2,27 @@
 
 All notable changes to timelog are documented here.
 
+## [0.2.2] - 2026-08-20
+
+### Changes
+- Lots of things, I did a poor job of keeping track
+
+---
+
+## [0.2.1] - 2026-08-20
+
+### Added
+- New menu and current status section
+
+---
+
+## [0.2.0] - 2026-08-19
+
+### Added
+- Untracked timer
+
+---
+
 ## [0.1.4] - 2026-08-19
 
 ### Added

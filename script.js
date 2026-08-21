@@ -4,32 +4,38 @@
 
 const CATEGORIES = [
   {
-    id: 'deep',
-    label: 'Deep Work',
+    id: 'focus',
+    label: 'Focus',
     color: '#5FB38A',
-    emoji: '🧠'
+    emoji: '🎯'
   },
   {
-    id: 'shallow',
-    label: 'Shallow Work',
+    id: 'admin',
+    label: 'Admin',
     color: '#82B98A',
     emoji: '📋'
   },
   {
-    id: 'maintenance',
-    label: 'Maintenance',
+    id: 'life',
+    label: 'Life',
     color: '#C7A85A',
-    emoji: '🔧'
+    emoji: '🏠'
   },
   {
-    id: 'rest',
-    label: 'Rest & Leisure',
+    id: 'leisure',
+    label: 'Leisure',
     color: '#5B9BC7',
     emoji: '🌿'
   },
   {
+    id: 'sleep',
+    label: 'Sleep',
+    color: '#8274B8',
+    emoji: '😴'
+  },
+  {
     id: 'wasted',
-    label: 'Wasted Time',
+    label: 'Wasted',
     color: '#C96A6A',
     emoji: '⏳'
   }
@@ -48,11 +54,25 @@ let active = JSON.parse(
   localStorage.getItem('timelog-active') || 'null'
 );
 
-let selectedCat = 'deep';
+let selectedCat = 'focus';
+
+let editingUntrackedId = null;
+
+let editingUntrackedCat = 'focus';
 
 let timerInterval = null;
 
 let insightDate = new Date();
+
+const UNTRACKED_GRACE_MS = 15 * 60 * 1000;
+
+let untrackedEntries = JSON.parse(
+  localStorage.getItem('timelog-untracked') || '[]'
+);
+
+let untrackedActive = JSON.parse(
+  localStorage.getItem('timelog-untracked-active') || 'null'
+);
 
 /* ==================================================
    THEME
@@ -60,12 +80,27 @@ let insightDate = new Date();
 
 function applyTheme(theme) {
 
-  document.documentElement.dataset.theme = theme;
+  document.documentElement.dataset.theme =
+    theme;
 
   localStorage.setItem(
     'timelog-theme',
     theme
   );
+
+  const themeLabel =
+    document.getElementById(
+      'theme-label'
+    );
+
+  if (themeLabel) {
+
+    themeLabel.textContent =
+      theme === 'dark'
+        ? 'Dark mode'
+        : 'Light mode';
+
+  }
 
 }
 
@@ -111,6 +146,77 @@ function initialiseTheme() {
 
 }
 
+/* ==================================================
+   MENU
+   ================================================== */
+
+function toggleMenu() {
+
+  const menu =
+    document.getElementById('app-menu');
+
+  const backdrop =
+    document.getElementById('menu-backdrop');
+
+  const button =
+    document.getElementById('menu-toggle');
+
+  const isOpen =
+    menu.classList.contains('open');
+
+  if (isOpen) {
+    closeMenu();
+    return;
+  }
+
+  menu.classList.add('open');
+
+  backdrop.classList.add('open');
+
+  button.classList.add('open');
+
+  button.setAttribute(
+    'aria-expanded',
+    'true'
+  );
+
+  menu.setAttribute(
+    'aria-hidden',
+    'false'
+  );
+
+}
+
+
+function closeMenu() {
+
+  const menu =
+    document.getElementById('app-menu');
+
+  const backdrop =
+    document.getElementById('menu-backdrop');
+
+  const button =
+    document.getElementById('menu-toggle');
+
+  menu.classList.remove('open');
+
+  backdrop.classList.remove('open');
+
+  button.classList.remove('open');
+
+  button.setAttribute(
+    'aria-expanded',
+    'false'
+  );
+
+  menu.setAttribute(
+    'aria-hidden',
+    'true'
+  );
+
+}
+
 
 /* ==================================================
    HELPERS
@@ -128,16 +234,19 @@ function fmtDur(ms) {
 
   const s = Math.floor(ms / 1000);
 
-  const h = Math.floor(s / 3600);
+  const h = Math.floor(
+    s / 3600
+  );
 
   const m = Math.floor(
     (s % 3600) / 60
   );
 
-  const sec = s % 60;
+  const sec =
+    s % 60;
 
   if (h > 0) {
-    return `${h}h ${m}m`;
+    return `${h}h ${m}m ${sec}s`;
   }
 
   if (m > 0) {
@@ -189,6 +298,26 @@ function saveEntries() {
 
 }
 
+function saveUntrackedEntries() {
+  localStorage.setItem(
+    'timelog-untracked',
+    JSON.stringify(untrackedEntries)
+  );
+}
+
+function saveUntrackedActive() {
+  if (untrackedActive) {
+    localStorage.setItem(
+      'timelog-untracked-active',
+      JSON.stringify(untrackedActive)
+    );
+  } else {
+    localStorage.removeItem(
+      'timelog-untracked-active'
+    );
+  }
+}
+
 
 /* ==================================================
    DATE HELPERS
@@ -214,12 +343,119 @@ function isSameDay(dateA, dateB) {
 
 function getEntriesForDay(date) {
 
-  return entries.filter(entry =>
-    isSameDay(
-      new Date(entry.start),
-      date
-    )
+  const dayStart =
+    new Date(date);
+
+  dayStart.setHours(
+    0, 0, 0, 0
   );
+
+  const dayEnd =
+    new Date(dayStart);
+
+  dayEnd.setDate(
+    dayEnd.getDate() + 1
+  );
+
+  const start =
+    dayStart.getTime();
+
+  const end =
+    dayEnd.getTime();
+
+  return entries
+    .filter(entry =>
+      entry.start < end &&
+      entry.end > start
+    )
+    .map(entry => {
+
+      const clippedStart =
+        Math.max(
+          entry.start,
+          start
+        );
+
+      const clippedEnd =
+        Math.min(
+          entry.end,
+          end
+        );
+
+      return {
+        ...entry,
+
+        start: clippedStart,
+        end: clippedEnd,
+
+        duration:
+          clippedEnd -
+          clippedStart
+      };
+
+    })
+    .filter(entry =>
+      entry.duration > 0
+    );
+
+}
+
+function getUntrackedEntriesForDay(date) {
+
+  const dayStart =
+    new Date(date);
+
+  dayStart.setHours(
+    0, 0, 0, 0
+  );
+
+  const dayEnd =
+    new Date(dayStart);
+
+  dayEnd.setDate(
+    dayEnd.getDate() + 1
+  );
+
+  const start =
+    dayStart.getTime();
+
+  const end =
+    dayEnd.getTime();
+
+  return untrackedEntries
+    .filter(entry =>
+      entry.start < end &&
+      entry.end > start
+    )
+    .map(entry => {
+
+      const clippedStart =
+        Math.max(
+          entry.start,
+          start
+        );
+
+      const clippedEnd =
+        Math.min(
+          entry.end,
+          end
+        );
+
+      return {
+        ...entry,
+
+        start: clippedStart,
+        end: clippedEnd,
+
+        duration:
+          clippedEnd -
+          clippedStart
+      };
+
+    })
+    .filter(entry =>
+      entry.duration > 0
+    );
 
 }
 
@@ -270,6 +506,257 @@ function formatShortDate(date) {
     }
   );
 
+}
+
+function getCleanDayTimeline(date) {
+
+  const dayStart = new Date(date);
+  dayStart.setHours(0, 0, 0, 0);
+
+  const dayEnd = new Date(dayStart);
+  dayEnd.setDate(dayEnd.getDate() + 1);
+
+  const start = dayStart.getTime();
+  const end = dayEnd.getTime();
+  const now = Date.now();
+
+  /*
+   * Only count time that has actually happened.
+   */
+  const visibleEnd =
+    now >= end
+      ? end
+      : now > start
+        ? now
+        : start;
+
+  /*
+   * Get all tracked periods.
+   */
+  const tracked = getEntriesForDay(date)
+    .map(entry => ({
+      start: Math.max(entry.start, start),
+      end: Math.min(entry.end, visibleEnd),
+      category: entry.category
+    }))
+    .filter(entry =>
+      entry.end > entry.start
+    );
+
+  /*
+   * Get all explicitly stored untracked periods.
+   */
+  const untracked = getUntrackedEntriesForDay(date)
+    .map(entry => ({
+      start: Math.max(entry.start, start),
+      end: Math.min(entry.end, visibleEnd),
+      category: null
+    }))
+    .filter(entry =>
+      entry.end > entry.start
+    );
+
+  /*
+   * Tracked time ALWAYS wins over untracked time.
+   *
+   * Start with all tracked periods.
+   */
+  const segments = [];
+
+  tracked.forEach(trackedEntry => {
+
+    /*
+     * Add this tracked period.
+     *
+     * Overlapping tracked entries should not normally
+     * exist, but if they do, later processing will
+     * prevent double-counting.
+     */
+    segments.push({
+      start: trackedEntry.start,
+      end: trackedEntry.end,
+      category: trackedEntry.category
+    });
+
+  });
+
+  /*
+   * Sort tracked periods chronologically.
+   */
+  segments.sort(
+    (a, b) =>
+      a.start - b.start ||
+      a.end - b.end
+  );
+
+  /*
+   * Merge overlapping tracked periods.
+   *
+   * This prevents tracked time itself from being
+   * counted twice.
+   */
+  const cleanTracked = [];
+
+  segments.forEach(segment => {
+
+    if (!cleanTracked.length) {
+
+      cleanTracked.push({
+        ...segment
+      });
+
+      return;
+
+    }
+
+    const previous =
+      cleanTracked[
+        cleanTracked.length - 1
+      ];
+
+    if (
+      segment.start <=
+      previous.end
+    ) {
+
+      /*
+       * Extend the existing period.
+       *
+       * Keep the category of the first
+       * tracked activity.
+       */
+      previous.end =
+        Math.max(
+          previous.end,
+          segment.end
+        );
+
+    } else {
+
+      cleanTracked.push({
+        ...segment
+      });
+
+    }
+
+  });
+
+  /*
+   * Now create the complete timeline.
+   *
+   * Anything not covered by tracked time
+   * is automatically untracked.
+   */
+  const timeline = [];
+
+  let cursor = start;
+
+  cleanTracked.forEach(segment => {
+
+    /*
+     * Ignore anything completely outside
+     * the visible period.
+     */
+    if (
+      segment.end <= start ||
+      segment.start >= visibleEnd
+    ) {
+
+      return;
+
+    }
+
+    const segmentStart =
+      Math.max(
+        segment.start,
+        start
+      );
+
+    const segmentEnd =
+      Math.min(
+        segment.end,
+        visibleEnd
+      );
+
+    /*
+     * Gap before tracked activity.
+     */
+    if (
+      segmentStart >
+      cursor
+    ) {
+
+      timeline.push({
+
+        start: cursor,
+
+        end: segmentStart,
+
+        category: null
+
+      });
+
+    }
+
+    /*
+     * Tracked activity.
+     */
+    if (
+      segmentEnd >
+      Math.max(cursor, segmentStart)
+    ) {
+
+      const actualStart =
+        Math.max(
+          cursor,
+          segmentStart
+        );
+
+      timeline.push({
+
+        start:
+          actualStart,
+
+        end:
+          segmentEnd,
+
+        category:
+          segment.category
+
+      });
+
+      cursor =
+        segmentEnd;
+
+    }
+
+  });
+
+  /*
+   * Anything after the final tracked activity
+   * is untracked.
+   */
+  if (
+    cursor <
+    visibleEnd
+  ) {
+
+    timeline.push({
+
+      start:
+        cursor,
+
+      end:
+        visibleEnd,
+
+      category:
+        null
+
+    });
+
+  }
+
+  return timeline;
 }
 
 
@@ -327,12 +814,771 @@ function buildPills() {
 
 }
 
+function openUntrackedEditor(id) {
+
+  const entry =
+    untrackedEntries.find(
+      e => e.id === id
+    );
+
+  if (!entry) {
+    return;
+  }
+
+  editingUntrackedId = id;
+
+  editingUntrackedCat =
+    'focus';
+
+  const modal =
+    document.getElementById(
+      'edit-modal'
+    );
+
+  const backdrop =
+    document.getElementById(
+      'edit-modal-backdrop'
+    );
+
+  const labelInput =
+    document.getElementById(
+      'edit-entry-label'
+    );
+
+  const timeDisplay =
+    document.getElementById(
+      'edit-modal-time'
+    );
+
+  timeDisplay.textContent =
+    `${fmtTime(entry.start)} → ${fmtTime(entry.end)} · ${fmtDur(entry.duration)}`;
+
+  labelInput.value =
+    entry.label || '';
+
+  buildEditCatPills();
+
+  modal.classList.add('open');
+  backdrop.classList.add('open');
+
+}
+
+function buildEditCatPills() {
+
+  const container =
+    document.getElementById(
+      'edit-cat-pills'
+    );
+
+  container.innerHTML = '';
+
+  CATEGORIES.forEach(cat => {
+
+    const pill =
+      document.createElement(
+        'button'
+      );
+
+    pill.className =
+      'cat-pill' +
+      (
+        cat.id === editingUntrackedCat
+          ? ' selected'
+          : ''
+      );
+
+    pill.textContent =
+      cat.emoji +
+      ' ' +
+      cat.label;
+
+    if (
+      cat.id === editingUntrackedCat
+    ) {
+
+      pill.style.borderColor =
+        cat.color;
+
+      pill.style.background =
+        cat.color + '22';
+
+    }
+
+    pill.onclick = () => {
+
+      editingUntrackedCat =
+        cat.id;
+
+      buildEditCatPills();
+
+    };
+
+    container.appendChild(
+      pill
+    );
+
+  });
+
+}
+
+function closeUntrackedEditor() {
+
+  document
+    .getElementById(
+      'edit-modal'
+    )
+    .classList.remove('open');
+
+  document
+    .getElementById(
+      'edit-modal-backdrop'
+    )
+    .classList.remove('open');
+
+  editingUntrackedId =
+    null;
+
+}
+
+function saveUntrackedClassification() {
+
+  if (!editingUntrackedId) {
+    return;
+  }
+
+  const entry =
+    untrackedEntries.find(
+      e =>
+        e.id ===
+        editingUntrackedId
+    );
+
+  if (!entry) {
+    return;
+  }
+
+  const cat =
+    getCat(
+      editingUntrackedCat
+    );
+
+  const label =
+    document
+      .getElementById(
+        'edit-entry-label'
+      )
+      .value
+      .trim();
+
+  /*
+   * Convert the untracked period
+   * into a normal entry.
+   */
+
+  entries.unshift({
+
+    id: Date.now(),
+
+    category:
+      cat.id,
+
+    label:
+      label ||
+      cat.label,
+
+    start:
+      entry.start,
+
+    end:
+      entry.end,
+
+    duration:
+      entry.duration
+
+  });
+
+  /*
+   * Remove it from untracked time.
+   */
+
+  untrackedEntries =
+    untrackedEntries.filter(
+      e =>
+        e.id !==
+        editingUntrackedId
+    );
+
+  saveEntries();
+  saveUntrackedEntries();
+
+  closeUntrackedEditor();
+
+  renderAll();
+
+}
+
+/* ==================================================
+   UNTRACKED TIME
+   ================================================== */
+
+function startUntracked(startTime) {
+
+  untrackedActive = {
+    start: startTime
+  };
+
+  saveUntrackedActive();
+}
+
+
+function finishUntracked(endTime) {
+
+  if (!untrackedActive) {
+    return;
+  }
+
+  const duration =
+    endTime -
+    untrackedActive.start;
+
+  if (duration <= 0) {
+    untrackedActive = null;
+    saveUntrackedActive();
+    return;
+  }
+
+  untrackedEntries.unshift({
+    id: Date.now(),
+    start: untrackedActive.start,
+    end: endTime,
+    duration,
+    label: null,
+    category: null
+  });
+
+  saveUntrackedEntries();
+
+  untrackedActive = null;
+
+  saveUntrackedActive();
+}
+
+function fillPastGapsWithUntracked() {
+
+  const now = Date.now();
+
+  /*
+   * Build a list of all completed tracked
+   * and untracked periods.
+   */
+  const periods = [
+
+    ...entries.map(entry => ({
+      start: entry.start,
+      end: entry.end,
+      type: 'tracked'
+    })),
+
+    ...untrackedEntries.map(entry => ({
+      start: entry.start,
+      end: entry.end,
+      type: 'untracked'
+    }))
+
+  ].filter(entry =>
+    entry.end > entry.start
+  );
+
+  /*
+   * Currently active tracked time is already
+   * accounted for, so include it in the
+   * timeline.
+   */
+  if (active) {
+
+    periods.push({
+
+      start: active.start,
+      end: now,
+      type: 'tracked'
+
+    });
+
+  }
+
+  /*
+   * Currently active untracked time is also
+   * already accounted for.
+   */
+  if (untrackedActive) {
+
+    periods.push({
+
+      start: untrackedActive.start,
+      end: now,
+      type: 'untracked'
+
+    });
+
+  }
+
+  if (!periods.length) {
+    return;
+  }
+
+  /*
+   * Sort chronologically.
+   */
+  periods.sort(
+    (a, b) =>
+      a.start - b.start
+  );
+
+  /*
+   * Start at the earliest known period.
+   */
+  let cursor =
+    periods[0].start;
+
+  const newUntracked = [];
+
+  periods.forEach(period => {
+
+    /*
+     * Ignore anything completely contained
+     * inside time we have already accounted for.
+     */
+    if (
+      period.end <= cursor
+    ) {
+      return;
+    }
+
+    /*
+     * If there is a genuine gap, create an
+     * untracked entry for it.
+     */
+    if (
+      period.start > cursor
+    ) {
+
+      newUntracked.push({
+
+        id:
+          Date.now() +
+          Math.random(),
+
+        start:
+          cursor,
+
+        end:
+          period.start,
+
+        duration:
+          period.start -
+          cursor,
+
+        label:
+          null,
+
+        category:
+          null
+
+      });
+
+    }
+
+    /*
+     * Move the cursor forward.
+     */
+    cursor =
+      Math.max(
+        cursor,
+        period.end
+      );
+
+  });
+
+  /*
+   * If nothing is currently running, fill the
+   * gap between the final known period and now.
+   */
+  if (
+    cursor < now &&
+    !active &&
+    !untrackedActive
+  ) {
+
+    newUntracked.push({
+
+      id:
+        Date.now() +
+        Math.random(),
+
+      start:
+        cursor,
+
+      end:
+        now,
+
+      duration:
+        now -
+        cursor,
+
+      label:
+        null,
+
+      category:
+        null
+
+    });
+
+  }
+
+  /*
+   * Add the newly discovered gaps.
+   */
+  if (
+    newUntracked.length
+  ) {
+
+    untrackedEntries = [
+
+      ...untrackedEntries,
+      ...newUntracked
+
+    ];
+
+    saveUntrackedEntries();
+
+  }
+
+}
+
+function cleanOverlappingUntrackedEntries() {
+
+  /*
+   * Start with valid untracked entries only.
+   */
+  let cleaned =
+    untrackedEntries
+
+      .filter(entry =>
+        entry.end > entry.start
+      )
+
+      .map(entry => ({
+        ...entry
+      }));
+
+
+  /*
+   * --------------------------------------------------
+   * STEP 1
+   *
+   * Remove every portion of untracked time that
+   * overlaps a tracked activity.
+   *
+   * Tracked time always wins.
+   * --------------------------------------------------
+   */
+
+  entries.forEach(tracked => {
+
+    const newCleaned = [];
+
+    cleaned.forEach(untracked => {
+
+      /*
+       * No overlap.
+       */
+      if (
+        untracked.end <= tracked.start ||
+        untracked.start >= tracked.end
+      ) {
+
+        newCleaned.push(
+          untracked
+        );
+
+        return;
+
+      }
+
+
+      /*
+       * There is overlap.
+       *
+       * Keep the portion before the tracked
+       * activity.
+       */
+      if (
+        untracked.start < tracked.start
+      ) {
+
+        newCleaned.push({
+
+          ...untracked,
+
+          id:
+            Date.now() +
+            Math.random(),
+
+          start:
+            untracked.start,
+
+          end:
+            tracked.start,
+
+          duration:
+            tracked.start -
+            untracked.start
+
+        });
+
+      }
+
+
+      /*
+       * Keep the portion after the tracked
+       * activity.
+       */
+      if (
+        untracked.end > tracked.end
+      ) {
+
+        newCleaned.push({
+
+          ...untracked,
+
+          id:
+            Date.now() +
+            Math.random(),
+
+          start:
+            tracked.end,
+
+          end:
+            untracked.end,
+
+          duration:
+            untracked.end -
+            tracked.end
+
+        });
+
+      }
+
+    });
+
+    cleaned = newCleaned;
+
+  });
+
+
+  /*
+   * --------------------------------------------------
+   * STEP 2
+   *
+   * Sort the remaining untracked periods.
+   * --------------------------------------------------
+   */
+
+  cleaned.sort(
+    (a, b) =>
+      a.start - b.start
+  );
+
+
+  /*
+   * --------------------------------------------------
+   * STEP 3
+   *
+   * Merge overlapping or touching untracked
+   * periods.
+   * --------------------------------------------------
+   */
+
+  const merged = [];
+
+  cleaned.forEach(entry => {
+
+    if (!merged.length) {
+
+      merged.push({
+        ...entry
+      });
+
+      return;
+
+    }
+
+    const previous =
+      merged[
+        merged.length - 1
+      ];
+
+
+    /*
+     * If this entry overlaps or directly touches
+     * the previous entry, merge them.
+     */
+    if (
+      entry.start <= previous.end
+    ) {
+
+      previous.end =
+        Math.max(
+          previous.end,
+          entry.end
+        );
+
+      previous.duration =
+        previous.end -
+        previous.start;
+
+    } else {
+
+      merged.push({
+        ...entry
+      });
+
+    }
+
+  });
+
+
+  /*
+   * Replace the old untracked entries.
+   */
+  untrackedEntries =
+    merged;
+
+  saveUntrackedEntries();
+
+}
+
+function classifyUntrackedEntry(id) {
+
+  const entry =
+    untrackedEntries.find(
+      e => e.id === id
+    );
+
+  if (!entry) {
+    return;
+  }
+
+  const catId =
+    prompt(
+      'Enter category: ' +
+      CATEGORIES
+        .map(c => c.label)
+        .join(', ')
+    );
+
+  if (!catId) {
+    return;
+  }
+
+  const category =
+    CATEGORIES.find(
+      c =>
+        c.label.toLowerCase() ===
+        catId.trim().toLowerCase()
+    );
+
+  if (!category) {
+    alert(
+      'Category not recognised.'
+    );
+    return;
+  }
+
+  const label =
+    prompt(
+      'Enter a name (optional):',
+      category.label
+    );
+
+  /*
+   * Turn the untracked period into
+   * a normal tracked entry.
+   */
+
+  entries.unshift({
+    id: Date.now(),
+    category: category.id,
+    label:
+      label &&
+      label.trim()
+        ? label.trim()
+        : category.label,
+    start: entry.start,
+    end: entry.end,
+    duration: entry.duration
+  });
+
+  /*
+   * Remove it from untracked time.
+   */
+
+  untrackedEntries =
+    untrackedEntries.filter(
+      e => e.id !== id
+    );
+
+  saveEntries();
+  saveUntrackedEntries();
+
+  renderAll();
+
+}
+
+
+function resolveUntrackedForNewActivity(startTime) {
+
+  if (!untrackedActive) {
+    return startTime;
+  }
+
+  const gap =
+    startTime -
+    untrackedActive.start;
+
+  /*
+   * Short gap:
+   * absorb it into the new activity.
+   */
+  if (gap < UNTRACKED_GRACE_MS) {
+
+    const originalStart =
+      untrackedActive.start;
+
+    untrackedActive = null;
+
+    saveUntrackedActive();
+
+    return originalStart;
+  }
+
+  /*
+   * Long gap:
+   * preserve it as an untracked entry.
+   */
+  finishUntracked(startTime);
+
+  return startTime;
+}
+
 
 /* ==================================================
    TIMER
    ================================================== */
 
 function startTimer() {
+
+  const actualStart = Date.now();
 
   const label =
     document
@@ -341,10 +1587,15 @@ function startTimer() {
       .trim()
     || getCat(selectedCat).label;
 
+  const activityStart =
+    resolveUntrackedForNewActivity(
+      actualStart
+    );
+
   active = {
     category: selectedCat,
     label,
-    start: Date.now()
+    start: activityStart
   };
 
   localStorage.setItem(
@@ -359,16 +1610,16 @@ function startTimer() {
   renderTrack();
 
   startTick();
-
 }
 
 
 function stopTimer() {
 
-  if (!active) return;
+  if (!active) {
+    return;
+  }
 
-  const end =
-    Date.now();
+  const end = Date.now();
 
   const entry = {
     ...active,
@@ -388,26 +1639,60 @@ function stopTimer() {
     'timelog-active'
   );
 
-  clearInterval(
-    timerInterval
-  );
+  clearInterval(timerInterval);
 
   document
     .getElementById('entry-label')
     .value = '';
 
+  /*
+   * The moment a tracked activity ends,
+   * an untracked period begins.
+   */
+  startUntracked(end);
+
   renderAll();
 
+  startTick();
 }
 
 
 function deleteEntry(id) {
 
   if (!confirm(
-    'Delete this entry?'
+    'Delete this entry? Its time will become untracked.'
   )) {
     return;
   }
+
+  const entry =
+    entries.find(
+      e => e.id === id
+    );
+
+  if (!entry) {
+    return;
+  }
+
+  /*
+   * Convert the deleted activity into
+   * an untracked period.
+   */
+
+  untrackedEntries.unshift({
+    id: Date.now(),
+    start: entry.start,
+    end: entry.end,
+    duration: entry.duration,
+    label: null,
+    category: null
+  });
+
+  saveUntrackedEntries();
+
+  /*
+   * Now remove the original tracked entry.
+   */
 
   entries =
     entries.filter(
@@ -421,16 +1706,72 @@ function deleteEntry(id) {
 }
 
 
+/* ==================================================
+   TIMER TICK
+   ================================================== */
+
 function startTick() {
 
-  clearInterval(
-    timerInterval
-  );
+  clearInterval(timerInterval);
 
-  timerInterval =
-    setInterval(() => {
+  timerInterval = setInterval(() => {
 
-      if (!active) return;
+    /*
+     * If the active activity has crossed midnight,
+     * split it into a new entry at 00:00.
+     */
+    if (active) {
+
+      const now = new Date();
+
+      const activityStart = new Date(active.start);
+
+      if (!isSameDay(activityStart, now)) {
+
+        const midnight = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+          0, 0, 0, 0
+        );
+
+        /*
+         * Save the portion that belongs to yesterday.
+         */
+        const entry = {
+          ...active,
+          end: midnight.getTime(),
+          duration:
+            midnight.getTime() - active.start,
+          id: midnight.getTime()
+        };
+
+        entries.unshift(entry);
+        saveEntries();
+
+        /*
+         * Start an identical activity
+         * at midnight.
+         */
+        active = {
+          ...active,
+          start: midnight.getTime()
+        };
+
+        localStorage.setItem(
+          'timelog-active',
+          JSON.stringify(active)
+        );
+
+        /*
+         * Refresh everything so the new
+         * entry appears in the correct day.
+         */
+        renderAll();
+      }
+    }
+
+    if (active) {
 
       const el =
         document.getElementById(
@@ -447,7 +1788,32 @@ function startTick() {
 
       }
 
-    }, 1000);
+    } else if (untrackedActive) {
+
+      const el =
+        document.getElementById(
+          'untracked-time'
+        );
+
+      if (el) {
+
+        el.textContent =
+          fmtDur(
+            Date.now() -
+            untrackedActive.start
+          );
+
+      }
+
+    }
+
+    /*
+     * Keep the header timer in sync.
+     */
+
+    renderHeaderActivity();
+
+  }, 1000);
 
 }
 
@@ -531,6 +1897,67 @@ function renderTrack() {
 
     buildPills();
 
+    if (untrackedActive) {
+
+      const elapsed =
+        Date.now() -
+        untrackedActive.start;
+
+      /*
+      * The existing new-entry card remains
+      * usable, but we'll show the current
+      * untracked duration above it.
+      */
+
+      let untrackedDisplay =
+        document.getElementById(
+          'untracked-display'
+        );
+
+      if (!untrackedDisplay) {
+
+        untrackedDisplay =
+          document.createElement('div');
+
+        untrackedDisplay.id =
+          'untracked-display';
+
+        untrackedDisplay.className =
+          'untracked-display';
+
+        newCard.insertBefore(
+          untrackedDisplay,
+          newCard.firstChild
+        );
+      }
+
+      untrackedDisplay.innerHTML = `
+
+        <div class="section-label">
+          untracked
+        </div>
+
+        <div class="untracked-time" id="untracked-time">
+          ${fmtDur(elapsed)}
+        </div>
+
+        <div class="untracked-meta">
+          Since ${fmtTime(untrackedActive.start)}
+        </div>
+
+      `;
+
+    } else {
+
+      const existing =
+        document.getElementById(
+          'untracked-display'
+        );
+
+      if (existing) {
+        existing.remove();
+      }
+    }
   }
 
 
@@ -635,6 +2062,148 @@ function renderTrack() {
 
 }
 
+/* ==================================================
+   HEADER ACTIVITY
+   ================================================== */
+
+function renderHeaderActivity() {
+
+  const activity =
+    document.getElementById(
+      'header-activity'
+    );
+
+  const name =
+    document.getElementById(
+      'header-activity-name'
+    );
+
+  const meta =
+    document.getElementById(
+      'header-activity-meta'
+    );
+
+  const timer =
+    document.getElementById(
+      'header-activity-timer'
+    );
+
+  /*
+   * Active tracked activity
+   */
+
+  if (active) {
+
+    const cat =
+      getCat(active.category);
+
+    activity.classList.add(
+      'visible'
+    );
+
+    activity.classList.remove(
+      'untracked'
+    );
+
+    /*
+     * Set the category colour
+     * for the header background.
+     */
+
+    activity.style.setProperty(
+      '--header-category-color',
+      cat.color
+    );
+
+    /*
+     * Show the category symbol
+     * and activity name on one line.
+     */
+
+    const defaultLabel =
+      cat.label;
+
+    const hasCustomLabel =
+      active.label &&
+      active.label !== defaultLabel;
+
+    name.textContent =
+      cat.emoji +
+      ' ' +
+      (
+        hasCustomLabel
+          ? active.label
+          : cat.label
+      );
+
+    /*
+     * Category name is no longer
+     * displayed separately.
+     */
+
+    meta.textContent = '';
+
+    timer.textContent =
+      fmtDur(
+        Date.now() -
+        active.start
+      );
+
+    return;
+  }
+
+  /*
+   * No tracked activity.
+   * Show untracked time if there
+   * is currently an untracked period.
+   */
+
+  if (untrackedActive) {
+
+    activity.classList.add(
+      'visible',
+      'untracked'
+    );
+
+    /*
+     * Remove the category colour
+     * when displaying untracked time.
+     */
+
+    activity.style.removeProperty(
+      '--header-category-color'
+    );
+
+    name.textContent =
+      '⏱️ Untracked';
+
+    meta.textContent =
+      '';
+
+    timer.textContent =
+      fmtDur(
+        Date.now() -
+        untrackedActive.start
+      );
+
+    return;
+  }
+
+  /*
+   * Nothing happening.
+   */
+
+  activity.classList.remove(
+    'visible',
+    'untracked'
+  );
+
+  activity.style.removeProperty(
+    '--header-category-color'
+  );
+
+}
+
 
 /* ==================================================
    LOG VIEW
@@ -647,7 +2216,10 @@ function renderLog() {
       'log-content'
     );
 
-  if (!entries.length) {
+  if (
+    !entries.length &&
+    !untrackedEntries.length
+  ) {
 
     container.innerHTML =
       '<div class="empty">No entries yet. Start tracking!</div>';
@@ -656,38 +2228,159 @@ function renderLog() {
 
   }
 
+  /*
+   * Build a list containing both tracked
+   * and untracked entries.
+   */
+  const allEntries = [
 
+    ...entries.map(entry => ({
+      ...entry,
+      type: 'tracked'
+    })),
+
+    ...untrackedEntries.map(entry => ({
+      ...entry,
+      type: 'untracked'
+    }))
+
+  ];
+
+  /*
+   * Split every entry at midnight.
+   *
+   * An activity such as:
+   *
+   * 11:00 PM → 1:00 AM
+   *
+   * becomes:
+   *
+   * 11:00 PM → 12:00 AM
+   * 12:00 AM → 1:00 AM
+   */
+  const splitEntries = [];
+
+  allEntries.forEach(entry => {
+
+    let cursor =
+      entry.start;
+
+    while (
+      cursor <
+      entry.end
+    ) {
+
+      const cursorDate =
+        new Date(cursor);
+
+      /*
+       * Find midnight immediately
+       * after the current portion.
+       */
+      const nextMidnight =
+        new Date(
+          cursorDate.getFullYear(),
+          cursorDate.getMonth(),
+          cursorDate.getDate() + 1,
+          0, 0, 0, 0
+        ).getTime();
+
+      const segmentEnd =
+        Math.min(
+          entry.end,
+          nextMidnight
+        );
+
+      splitEntries.push({
+
+        ...entry,
+
+        start:
+          cursor,
+
+        end:
+          segmentEnd,
+
+        duration:
+          segmentEnd -
+          cursor,
+
+        /*
+         * Give each split segment
+         * its own display id.
+         */
+        displayId:
+          `${entry.id}-${cursor}`
+
+      });
+
+      cursor =
+        segmentEnd;
+
+    }
+
+  });
+
+  /*
+   * Sort newest first.
+   */
+  splitEntries.sort(
+    (a, b) =>
+      b.start -
+      a.start
+  );
+
+  /*
+   * Group entries by the day they
+   * actually occur on.
+   */
   const groups = {};
 
-
-  entries.forEach(entry => {
+  splitEntries.forEach(entry => {
 
     const date =
       fmtDate(entry.start);
 
     if (!groups[date]) {
+
       groups[date] = [];
+
     }
 
-    groups[date].push(entry);
+    groups[date].push(
+      entry
+    );
 
   });
 
-
   container.innerHTML = '';
 
-
+  /*
+   * Render each day.
+   */
   Object.entries(groups)
     .forEach(
       ([date, dayEntries]) => {
 
-        const total =
-          dayEntries.reduce(
-            (sum, entry) =>
-              sum + entry.duration,
-            0
-          );
-
+        /*
+         * Calculate tracked time only.
+         *
+         * Untracked time is excluded
+         * from the day total.
+         */
+        const trackedTotal =
+          dayEntries
+            .filter(
+              entry =>
+                entry.type ===
+                'tracked'
+            )
+            .reduce(
+              (sum, entry) =>
+                sum +
+                entry.duration,
+              0
+            );
 
         const group =
           document.createElement(
@@ -696,7 +2389,6 @@ function renderLog() {
 
         group.className =
           'day-group';
-
 
         const header =
           document.createElement(
@@ -707,14 +2399,24 @@ function renderLog() {
           'day-header';
 
         header.innerHTML = `
-          <span>${date}</span>
-          <span>${fmtDur(total)}</span>
+
+          <span>
+            ${date}
+          </span>
+
+          <span>
+            ${
+              trackedTotal > 0
+                ? fmtDur(trackedTotal)
+                : '—'
+            }
+          </span>
+
         `;
 
         group.appendChild(
           header
         );
-
 
         const card =
           document.createElement(
@@ -724,74 +2426,125 @@ function renderLog() {
         card.className =
           'card log-card';
 
+        dayEntries.forEach(
+          entry => {
 
-        dayEntries.forEach(entry => {
+            const isUntracked =
+              entry.type ===
+              'untracked';
 
-          const cat =
-            getCat(
-              entry.category
-            );
+            const cat =
+              isUntracked
 
-          const div =
-            document.createElement(
-              'div'
-            );
+                ? {
+                    label:
+                      'Untracked',
 
-          div.className =
-            'entry';
+                    emoji:
+                      '⏱️',
 
-          div.innerHTML = `
+                    color:
+                      '#888888'
+                  }
 
-            <div
-              class="
-                entry-bar
-                category-entry-bar
-              "
-              style="
-                --category-color:${cat.color};
-              "
-            ></div>
+                : getCat(
+                    entry.category
+                  );
 
-            <div class="category-icon">
-              ${cat.emoji}
-            </div>
+            const div =
+              document.createElement(
+                'div'
+              );
 
-            <div class="entry-info">
+            div.className =
+              'entry';
 
-              <div class="entry-name">
-                ${entry.label}
+            div.innerHTML = `
+
+              <div
+                class="
+                  entry-bar
+                  category-entry-bar
+                "
+                style="
+                  --category-color:${cat.color};
+                "
+              ></div>
+
+              <div class="category-icon">
+                ${cat.emoji}
               </div>
 
-              <div class="entry-meta">
-                ${cat.label}
-                ·
-                ${fmtTime(entry.start)}
-                –
-                ${fmtTime(entry.end)}
+              <div class="entry-info">
+
+                <div class="entry-name">
+                  ${
+                    isUntracked
+                      ? 'Untracked Time'
+                      : entry.label
+                  }
+                </div>
+
+                <div class="entry-meta">
+
+                  ${cat.label}
+                  ·
+                  ${fmtTime(entry.start)}
+                  –
+                  ${fmtTime(entry.end)}
+
+                </div>
+
               </div>
 
-            </div>
+              <div class="entry-dur">
+                ${fmtDur(entry.duration)}
+              </div>
 
-            <div class="entry-dur">
-              ${fmtDur(entry.duration)}
-            </div>
+              ${
+                isUntracked
 
-            <button
-              class="btn-del"
-              onclick="deleteEntry(${entry.id})"
-              aria-label="Delete entry"
-            >
-              ×
-            </button>
+                  ? `
+                    <button
+                      class="btn-edit"
+                      onclick="
+                        openUntrackedEditor(
+                          ${entry.id}
+                        )
+                      "
+                      aria-label="
+                        Classify untracked time
+                      "
+                    >
+                      ✎
+                    </button>
+                  `
 
-          `;
+                  : `
+                    <button
+                      class="btn-del"
+                      onclick="
+                        deleteEntry(
+                          ${entry.id}
+                        )
+                      "
+                      aria-label="
+                        Delete entry
+                      "
+                    >
+                      ×
+                    </button>
+                  `
+              }
 
-          card.appendChild(
-            div
-          );
+            `;
 
-        });
+            card.appendChild(
+              div
+            );
 
+          }
+        );
 
         group.appendChild(
           card
@@ -848,30 +2601,294 @@ function changeInsightDay(amount) {
 
 function renderSelectedDay() {
 
-  const entriesForDay =
-    getEntriesForDay(
+  const dayStart =
+    new Date(insightDate);
+
+  dayStart.setHours(
+    0, 0, 0, 0
+  );
+
+  const dayEnd =
+    new Date(dayStart);
+
+  dayEnd.setDate(
+    dayEnd.getDate() + 1
+  );
+
+  const now = Date.now();
+
+  /*
+   * Only show time that has actually
+   * occurred.
+   *
+   * Completed days = 24 hours.
+   * Today = current time.
+   * Future = 0.
+   */
+  let visibleEnd;
+
+  if (now >= dayEnd.getTime()) {
+
+    visibleEnd =
+      dayEnd.getTime();
+
+  } else if (
+    now > dayStart.getTime()
+  ) {
+
+    visibleEnd = now;
+
+  } else {
+
+    visibleEnd =
+      dayStart.getTime();
+
+  }
+
+  /*
+   * Get tracked entries for the day.
+   */
+  const tracked =
+    getEntriesForDay(insightDate)
+      .map(entry => ({
+
+        start:
+          Math.max(
+            entry.start,
+            dayStart.getTime()
+          ),
+
+        end:
+          Math.min(
+            entry.end,
+            visibleEnd
+          ),
+
+        category:
+          entry.category
+
+      }))
+      .filter(entry =>
+        entry.end > entry.start
+      );
+
+  /*
+   * Get untracked entries for the day.
+   */
+  const untracked =
+    getUntrackedEntriesForDay(
       insightDate
-    );
+    )
+      .map(entry => ({
 
+        start:
+          Math.max(
+            entry.start,
+            dayStart.getTime()
+          ),
 
-  const total =
-    entriesForDay.reduce(
-      (sum, entry) =>
-        sum + entry.duration,
+        end:
+          Math.min(
+            entry.end,
+            visibleEnd
+          ),
+
+        category:
+          null
+
+      }))
+      .filter(entry =>
+        entry.end > entry.start
+      );
+
+  /*
+   * Combine everything and sort
+   * chronologically.
+   */
+  const periods = [
+    ...tracked,
+    ...untracked
+  ].sort(
+    (a, b) =>
+      a.start - b.start
+  );
+
+  /*
+   * Build a clean, non-overlapping
+   * timeline.
+   *
+   * Every gap becomes Untracked.
+   */
+  const segments = [];
+
+  let cursor =
+    dayStart.getTime();
+
+  periods.forEach(period => {
+
+    /*
+     * Ignore periods completely
+     * outside the visible portion.
+     */
+    if (
+      period.start >=
+      visibleEnd
+    ) {
+      return;
+    }
+
+    const start =
+      Math.max(
+        period.start,
+        dayStart.getTime()
+      );
+
+    const end =
+      Math.min(
+        period.end,
+        visibleEnd
+      );
+
+    if (end <= start) {
+      return;
+    }
+
+    /*
+     * Fill any gap with untracked.
+     */
+    if (start > cursor) {
+
+      segments.push({
+
+        start: cursor,
+        end: start,
+        category: null
+
+      });
+
+    }
+
+    /*
+     * IMPORTANT:
+     *
+     * If this period overlaps something
+     * we've already accounted for, only
+     * use the portion that hasn't already
+     * been counted.
+     */
+    const actualStart =
+      Math.max(
+        start,
+        cursor
+      );
+
+    if (
+      end > actualStart
+    ) {
+
+      segments.push({
+
+        start: actualStart,
+        end,
+        category:
+          period.category
+
+      });
+
+      cursor = end;
+
+    }
+
+  });
+
+  /*
+   * Fill everything from the final
+   * recorded period until now with
+   * untracked time.
+   */
+  if (
+    cursor < visibleEnd
+  ) {
+
+    segments.push({
+
+      start: cursor,
+      end: visibleEnd,
+      category: null
+
+    });
+
+  }
+
+  /*
+   * Calculate totals from the CLEAN
+   * non-overlapping segments.
+   */
+  const categoryTotals = {};
+
+  CATEGORIES.forEach(cat => {
+
+    categoryTotals[cat.id] = 0;
+
+  });
+
+  let untrackedTotal = 0;
+
+  segments.forEach(segment => {
+
+    const duration =
+      segment.end -
+      segment.start;
+
+    if (
+      segment.category &&
+      categoryTotals[
+        segment.category
+      ] !== undefined
+    ) {
+
+      categoryTotals[
+        segment.category
+      ] += duration;
+
+    } else {
+
+      untrackedTotal += duration;
+
+    }
+
+  });
+
+  /*
+   * Calculate tracked total from
+   * the category totals.
+   */
+  const trackedTotal =
+    Object.values(
+      categoryTotals
+    ).reduce(
+      (sum, duration) =>
+        sum + duration,
       0
     );
 
+  /*
+   * Total accounted time.
+   *
+   * For a completed day this will
+   * be exactly 24 hours.
+   */
+  const total =
+    trackedTotal +
+    untrackedTotal;
 
+  /*
+   * Update date heading.
+   */
   const labelEl =
     document.getElementById(
       'insights-date-label'
     );
-
-  const totalEl =
-    document.getElementById(
-      'insights-date-total'
-    );
-
 
   if (
     isSameDay(
@@ -899,13 +2916,24 @@ function renderSelectedDay() {
 
   }
 
+  /*
+   * Update the tracked total at
+   * the top of the day breakdown.
+   */
+  const totalEl =
+    document.getElementById(
+      'insights-date-total'
+    );
 
   totalEl.textContent =
-    total > 0
-      ? fmtDur(total)
+    trackedTotal > 0
+      ? fmtDur(trackedTotal) +
+        ' tracked'
       : 'No time tracked';
 
-
+  /*
+   * Day navigation.
+   */
   const previousBtn =
     document.getElementById(
       'previous-day'
@@ -916,7 +2944,6 @@ function renderSelectedDay() {
       'next-day'
     );
 
-
   previousBtn.disabled =
     false;
 
@@ -926,13 +2953,14 @@ function renderSelectedDay() {
       new Date()
     );
 
-
   const barsEl =
     document.getElementById(
       'selected-day-bars'
     );
 
-
+  /*
+   * No data.
+   */
   if (!total) {
 
     barsEl.innerHTML = `
@@ -945,43 +2973,76 @@ function renderSelectedDay() {
 
   }
 
+  /*
+   * Build category list.
+   */
+  const cats = [];
 
-  const cats =
-    CATEGORIES
-      .map(cat => {
+  CATEGORIES.forEach(cat => {
 
-        const categoryTotal =
-          entriesForDay
-            .filter(
-              entry =>
-                entry.category === cat.id
-            )
-            .reduce(
-              (sum, entry) =>
-                sum + entry.duration,
-              0
-            );
+    const categoryTotal =
+      categoryTotals[cat.id];
 
-        return {
-          ...cat,
-          total: categoryTotal,
-          pct: Math.round(
+    if (
+      categoryTotal > 0
+    ) {
+
+      cats.push({
+
+        ...cat,
+
+        total:
+          categoryTotal,
+
+        pct:
+          Math.round(
             categoryTotal /
             total *
             100
           )
-        };
 
-      })
-      .filter(
-        cat =>
-          cat.total > 0
-      );
+      });
 
+    }
+
+  });
+
+  /*
+   * Add untracked.
+   */
+  if (
+    untrackedTotal > 0
+  ) {
+
+    cats.push({
+
+      id: 'untracked',
+
+      label: 'Untracked',
+
+      emoji: '⏱️',
+
+      color: '#888888',
+
+      total:
+        untrackedTotal,
+
+      pct:
+        Math.round(
+          untrackedTotal /
+          total *
+          100
+        )
+
+    });
+
+  }
 
   barsEl.innerHTML = '';
 
-
+  /*
+   * Render bars.
+   */
   cats.forEach(cat => {
 
     const div =
@@ -1024,13 +3085,13 @@ function renderSelectedDay() {
 
     `;
 
-    barsEl.appendChild(
-      div
-    );
+    barsEl.appendChild(div);
 
   });
 
-
+  /*
+   * Divider.
+   */
   const hr =
     document.createElement(
       'hr'
@@ -1039,11 +3100,11 @@ function renderSelectedDay() {
   hr.className =
     'divider';
 
-  barsEl.appendChild(
-    hr
-  );
+  barsEl.appendChild(hr);
 
-
+  /*
+   * Bottom tracked total.
+   */
   const row =
     document.createElement(
       'div'
@@ -1055,20 +3116,24 @@ function renderSelectedDay() {
   row.innerHTML = `
 
     <span class="total-label">
-      Total tracked
+      Total time tracked
     </span>
 
     <span class="total-value">
-      ${fmtDur(total)}
+      ${
+        trackedTotal > 0
+          ? fmtDur(trackedTotal)
+          : '0s'
+      }
     </span>
 
   `;
 
-  barsEl.appendChild(
-    row
-  );
+  barsEl.appendChild(row);
 
-
+  /*
+   * Animate bars.
+   */
   setTimeout(() => {
 
     barsEl
@@ -1103,9 +3168,10 @@ function renderWeeklyBreakdown() {
       insightDate
     );
 
+  const now =
+    new Date();
 
   const days = [];
-
 
   for (
     let i = 0;
@@ -1120,83 +3186,328 @@ function renderWeeklyBreakdown() {
       start.getDate() + i
     );
 
-    days.push(
-      date
-    );
+    days.push(date);
 
   }
 
-
-  const totals =
+  /*
+   * Build a 24-hour timeline for
+   * every day.
+   */
+  const dayData =
     days.map(day => {
 
-      const dayEntries =
-        getEntriesForDay(
-          day
-        );
+      const dayStart =
+        new Date(day);
 
-      return dayEntries.reduce(
-        (sum, entry) =>
-          sum + entry.duration,
-        0
+      dayStart.setHours(
+        0, 0, 0, 0
       );
+
+      const dayEnd =
+        new Date(dayStart);
+
+      dayEnd.setDate(
+        dayEnd.getDate() + 1
+      );
+
+      /*
+       * How much of this day has
+       * actually happened?
+       *
+       * Past day:
+       *   24 hours
+       *
+       * Today:
+       *   current time
+       *
+       * Future:
+       *   0 hours
+       */
+      let visibleEnd;
+
+      if (
+        now >= dayEnd
+      ) {
+
+        visibleEnd =
+          dayEnd.getTime();
+
+      } else if (
+        now > dayStart
+      ) {
+
+        visibleEnd =
+          now.getTime();
+
+      } else {
+
+        visibleEnd =
+          dayStart.getTime();
+
+      }
+
+      /*
+       * Get tracked entries.
+       *
+       * getEntriesForDay() already clips
+       * entries that cross midnight.
+       */
+      const tracked =
+        getEntriesForDay(day)
+          .map(entry => ({
+
+            start:
+              Math.max(
+                entry.start,
+                dayStart.getTime()
+              ),
+
+            end:
+              Math.min(
+                entry.end,
+                dayEnd.getTime()
+              ),
+
+            category:
+              entry.category
+
+          }))
+          .filter(
+            entry =>
+              entry.end >
+              entry.start
+          );
+
+      /*
+       * Get explicitly stored untracked
+       * entries.
+       */
+      const untracked =
+        getUntrackedEntriesForDay(day)
+          .map(entry => ({
+
+            start:
+              Math.max(
+                entry.start,
+                dayStart.getTime()
+              ),
+
+            end:
+              Math.min(
+                entry.end,
+                dayEnd.getTime()
+              ),
+
+            category:
+              null
+
+          }))
+          .filter(
+            entry =>
+              entry.end >
+              entry.start
+          );
+
+      /*
+       * Combine everything into one
+       * chronological timeline.
+       */
+      const periods = [
+        ...tracked,
+        ...untracked
+      ].sort(
+        (a, b) =>
+          a.start - b.start
+      );
+
+      const segments = [];
+
+      let cursor =
+        dayStart.getTime();
+
+      periods.forEach(
+        period => {
+
+          /*
+           * Ignore periods that are
+           * entirely in the future.
+           */
+          if (
+            period.start >=
+            visibleEnd
+          ) {
+
+            return;
+
+          }
+
+          const periodStart =
+            Math.max(
+              period.start,
+              dayStart.getTime()
+            );
+
+          const periodEnd =
+            Math.min(
+              period.end,
+              visibleEnd
+            );
+
+          /*
+           * Any gap between recorded
+           * periods is automatically
+           * untracked.
+           */
+          if (
+            periodStart >
+            cursor
+          ) {
+
+            segments.push({
+              start:
+                cursor,
+
+              end:
+                periodStart,
+
+              category:
+                null
+
+            });
+
+          }
+
+          /*
+           * Add the actual tracked or
+           * explicitly untracked period.
+           */
+          if (
+            periodEnd >
+            periodStart
+          ) {
+
+            segments.push({
+              start:
+                periodStart,
+
+              end:
+                periodEnd,
+
+              category:
+                period.category
+
+            });
+
+          }
+
+          cursor =
+            Math.max(
+              cursor,
+              periodEnd
+            );
+
+        }
+      );
+
+      /*
+       * Anything remaining before the
+       * current time is untracked.
+       */
+      if (
+        cursor <
+        visibleEnd
+      ) {
+
+        segments.push({
+          start:
+            cursor,
+
+          end:
+            visibleEnd,
+
+          category:
+            null
+
+        });
+
+      }
+
+      /*
+       * Calculate TRACKED time only.
+       *
+       * Untracked segments are deliberately
+       * excluded.
+       */
+      const trackedTotal =
+        segments
+          .filter(
+            segment =>
+              segment.category !== null
+          )
+          .reduce(
+            (sum, segment) =>
+              sum +
+              (
+                segment.end -
+                segment.start
+              ),
+            0
+          );
+
+      return {
+        day,
+        dayStart,
+        dayEnd,
+        visibleEnd,
+        segments,
+        trackedTotal
+      };
 
     });
 
-
+  /*
+   * Weekly total = tracked time only.
+   */
   const weekTotal =
-    totals.reduce(
-      (sum, value) =>
-        sum + value,
+    dayData.reduce(
+      (sum, day) =>
+        sum +
+        day.trackedTotal,
       0
     );
-
 
   document
     .getElementById(
       'weekly-total'
     )
     .textContent =
-    weekTotal > 0
-      ? fmtDur(weekTotal)
-      : 'No time tracked';
+      weekTotal > 0
+        ? fmtDur(weekTotal)
+        : 'No time tracked';
 
-
-  if (!weekTotal) {
-
-    container.innerHTML = `
-      <div class="empty empty-small">
-        No data for this week.
-      </div>
-    `;
-
-    return;
-
-  }
-
-
-  const maxTotal =
-    Math.max(
-      ...totals,
-      1
-    );
-
-
+  /*
+   * Render the week even if there
+   * isn't any tracked time yet.
+   *
+   * This is useful because the bars
+   * still show untracked time.
+   */
   container.innerHTML = '';
 
+  /*
+   * Render each day.
+   */
+  dayData.forEach(
+    data => {
 
-  days.forEach(
-    (day, index) => {
-
-      const dayTotal =
-        totals[index];
-
-
-      const dayEntries =
-        getEntriesForDay(
-          day
-        );
-
+      const {
+        day,
+        dayStart,
+        visibleEnd,
+        segments,
+        trackedTotal
+      } = data;
 
       const row =
         document.createElement(
@@ -1206,15 +3517,15 @@ function renderWeeklyBreakdown() {
       row.className =
         'weekly-row';
 
-
-      const isSelected =
+      /*
+       * Highlight selected day.
+       */
+      if (
         isSameDay(
           day,
           insightDate
-        );
-
-
-      if (isSelected) {
+        )
+      ) {
 
         row.classList.add(
           'selected-week-day'
@@ -1222,70 +3533,91 @@ function renderWeeklyBreakdown() {
 
       }
 
+      /*
+       * Build the coloured segments.
+       *
+       * Every segment is measured
+       * against the FULL 24-hour day.
+       */
+      let segmentHTML = '';
 
-      let segments = '';
+      segments.forEach(
+        segment => {
 
+          const duration =
+            segment.end -
+            segment.start;
 
-      if (dayTotal > 0) {
+          const width =
+            duration /
+            (
+              24 *
+              60 *
+              60 *
+              1000
+            ) *
+            100;
 
-        CATEGORIES.forEach(
-          cat => {
+          if (
+            width <= 0
+          ) {
 
-            const categoryTotal =
-              dayEntries
-                .filter(
-                  entry =>
-                    entry.category ===
-                    cat.id
-                )
-                .reduce(
-                  (sum, entry) =>
-                    sum +
-                    entry.duration,
-                  0
-                );
-
-
-            if (!categoryTotal) {
-              return;
-            }
-
-
-            const width =
-              categoryTotal /
-              dayTotal *
-              100;
-
-
-            segments += `
-
-              <div
-                class="weekly-segment"
-                style="
-                  width:${width}%;
-                  background:${cat.color};
-                "
-              ></div>
-
-            `;
+            return;
 
           }
-        );
 
-      }
+          let cat;
 
+          if (
+            segment.category
+          ) {
 
-      const barWidth =
-        dayTotal > 0
-          ? Math.max(
-              4,
-              dayTotal /
-              maxTotal *
-              100
-            )
-          : 0;
+            cat =
+              getCat(
+                segment.category
+              );
 
+          } else {
 
+            cat = {
+              label:
+                'Untracked',
+
+              emoji:
+                '⏱️',
+
+              color:
+                '#888888'
+            };
+
+          }
+
+          segmentHTML += `
+
+            <div
+              class="weekly-segment"
+              style="
+                width:${width}%;
+                background:${cat.color};
+              "
+              title="
+                ${cat.label}
+                ·
+                ${fmtDur(duration)}
+              "
+            ></div>
+
+          `;
+
+        }
+      );
+
+      /*
+       * The weekly bar is ALWAYS 24 hours.
+       *
+       * Future time is left blank because
+       * there are simply no segments for it.
+       */
       row.innerHTML = `
 
         <div class="weekly-day">
@@ -1303,13 +3635,8 @@ function renderWeeklyBreakdown() {
 
         <div class="weekly-bar-area">
 
-          <div
-            class="weekly-bar"
-            style="
-              width:${barWidth}%;
-            "
-          >
-            ${segments}
+          <div class="weekly-bar">
+            ${segmentHTML}
           </div>
 
         </div>
@@ -1318,15 +3645,14 @@ function renderWeeklyBreakdown() {
         <div class="weekly-day-total">
 
           ${
-            dayTotal > 0
-              ? fmtDur(dayTotal)
+            trackedTotal > 0
+              ? fmtDur(trackedTotal)
               : '—'
           }
 
         </div>
 
       `;
-
 
       container.appendChild(
         row
@@ -1476,6 +3802,8 @@ function renderAll() {
 
   renderInsights();
 
+  renderHeaderActivity();
+
 }
 
 
@@ -1609,12 +3937,16 @@ initialiseTheme();
 
 buildPills();
 
+fillPastGapsWithUntracked();
+
+cleanOverlappingUntrackedEntries();
+
 renderAll();
 
 loadVersion();
 
 registerServiceWorker();
 
-if (active) {
+if (active || untrackedActive) {
   startTick();
 }
