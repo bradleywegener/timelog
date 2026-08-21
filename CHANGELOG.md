@@ -2,6 +2,13 @@
 
 All notable changes to timelog are documented here.
 
+## [0.2.3] - 2026-08-20
+
+### Changes
+- Copilot fixed some discrepancies between the log and insights pages. 
+
+---
+
 ## [0.2.2] - 2026-08-20
 
 ### Changes

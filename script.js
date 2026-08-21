@@ -75,6 +75,66 @@ let untrackedActive = JSON.parse(
 );
 
 /* ==================================================
+   DATA MIGRATION
+   ================================================== */
+
+function migrateLegacyEntriesToCurrentCategories() {
+
+  const categoryMap = {
+    deep: 'focus',
+    'deep-work': 'focus',
+    shallow: 'admin',
+    'shallow-work': 'admin',
+    maintenance: 'life',
+    rest: 'leisure',
+    'rest-leisure': 'leisure',
+    wasted: 'wasted',
+    'wasted-time': 'wasted'
+  };
+
+  let entriesChanged = false;
+
+  entries = entries.map(entry => {
+
+    const category =
+      categoryMap[entry.category];
+
+    if (!category) {
+      return entry;
+    }
+
+    entriesChanged = true;
+
+    return {
+      ...entry,
+      category
+    };
+
+  });
+
+  if (entriesChanged) {
+    saveEntries();
+  }
+
+  if (
+    active &&
+    categoryMap[active.category]
+  ) {
+    active = {
+      ...active,
+      category:
+        categoryMap[active.category]
+    };
+
+    localStorage.setItem(
+      'timelog-active',
+      JSON.stringify(active)
+    );
+  }
+
+}
+
+/* ==================================================
    THEME
    ================================================== */
 
@@ -542,6 +602,18 @@ function getCleanDayTimeline(date) {
     .filter(entry =>
       entry.end > entry.start
     );
+
+  if (
+    active &&
+    active.start < visibleEnd &&
+    active.start < end
+  ) {
+    tracked.push({
+      start: Math.max(active.start, start),
+      end: Math.min(Date.now(), visibleEnd),
+      category: active.category
+    });
+  }
 
   /*
    * Get all explicitly stored untracked periods.
@@ -2209,6 +2281,133 @@ function renderHeaderActivity() {
    LOG VIEW
    ================================================== */
 
+function getLogDisplayEntries() {
+
+  const periods = [
+    ...entries,
+    ...untrackedEntries,
+    ...(active ? [active] : []),
+    ...(untrackedActive ? [
+      {
+        start: untrackedActive.start,
+        end: Date.now()
+      }
+    ] : [])
+  ];
+
+  if (!periods.length) {
+    return [];
+  }
+
+  const earliest =
+    new Date(
+      Math.min(...periods.map(period => period.start))
+    );
+
+  earliest.setHours(0, 0, 0, 0);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const displayEntries = [];
+
+  for (
+    const day = new Date(earliest);
+    day <= today;
+    day.setDate(day.getDate() + 1)
+  ) {
+
+    const timeline = getCleanDayTimeline(day);
+
+    timeline.forEach(segment => {
+
+      if (segment.category) {
+
+        const source = entries.find(entry =>
+          entry.category === segment.category &&
+          entry.start < segment.end &&
+          entry.end > segment.start
+        ) || (
+          active &&
+          active.category === segment.category &&
+          active.start < segment.end
+            ? active
+            : null
+        );
+
+        displayEntries.push({
+          ...(source || {}),
+          id: source?.id || `tracked-${segment.start}`,
+          type: 'tracked',
+          start: segment.start,
+          end: segment.end,
+          duration: segment.end - segment.start,
+          label: source?.label || getCat(segment.category).label,
+          category: segment.category
+        });
+
+        return;
+      }
+
+      let cursor = segment.start;
+
+      untrackedEntries
+        .filter(entry =>
+          entry.start < segment.end &&
+          entry.end > segment.start
+        )
+        .sort((a, b) => a.start - b.start)
+        .forEach(entry => {
+
+          const start = Math.max(entry.start, segment.start);
+          const end = Math.min(entry.end, segment.end);
+
+          if (start > cursor) {
+            displayEntries.push({
+              id: `untracked-${cursor}`,
+              type: 'untracked',
+              start: cursor,
+              end: start,
+              duration: start - cursor,
+              category: null,
+              label: null
+            });
+          }
+
+          if (end > start) {
+            displayEntries.push({
+              ...entry,
+              type: 'untracked',
+              start,
+              end,
+              duration: end - start
+            });
+
+            cursor = Math.max(cursor, end);
+          }
+
+        });
+
+      if (cursor < segment.end) {
+        displayEntries.push({
+          id: `untracked-${cursor}`,
+          type: 'untracked',
+          start: cursor,
+          end: segment.end,
+          duration: segment.end - cursor,
+          category: null,
+          label: null
+        });
+      }
+
+    });
+  }
+
+  return displayEntries.filter(entry =>
+    entry.duration > 0
+  );
+}
+
 function renderLog() {
 
   const container =
@@ -2216,10 +2415,9 @@ function renderLog() {
       'log-content'
     );
 
-  if (
-    !entries.length &&
-    !untrackedEntries.length
-  ) {
+  const allEntries = getLogDisplayEntries();
+
+  if (!allEntries.length) {
 
     container.innerHTML =
       '<div class="empty">No entries yet. Start tracking!</div>';
@@ -2232,20 +2430,6 @@ function renderLog() {
    * Build a list containing both tracked
    * and untracked entries.
    */
-  const allEntries = [
-
-    ...entries.map(entry => ({
-      ...entry,
-      type: 'tracked'
-    })),
-
-    ...untrackedEntries.map(entry => ({
-      ...entry,
-      type: 'untracked'
-    }))
-
-  ];
-
   /*
    * Split every entry at midnight.
    *
@@ -2504,7 +2688,9 @@ function renderLog() {
               ${
                 isUntracked
 
-                  ? `
+                  ? (
+                      typeof entry.id === 'number'
+                        ? `
                     <button
                       class="btn-edit"
                       onclick="
@@ -2518,7 +2704,9 @@ function renderLog() {
                     >
                       ✎
                     </button>
-                  `
+                      `
+                      : ''
+                  )
 
                   : `
                     <button
@@ -2714,12 +2902,12 @@ function renderSelectedDay() {
   );
 
   /*
-   * Build a clean, non-overlapping
+  * Build a clean, non-overlapping
    * timeline.
    *
    * Every gap becomes Untracked.
    */
-  const segments = [];
+  let segments = [];
 
   let cursor =
     dayStart.getTime();
@@ -2858,6 +3046,8 @@ function renderSelectedDay() {
     }
 
   });
+
+  segments = getCleanDayTimeline(insightDate);
 
   /*
    * Calculate tracked total from
@@ -3321,7 +3511,7 @@ function renderWeeklyBreakdown() {
           a.start - b.start
       );
 
-      const segments = [];
+      let segments = [];
 
       let cursor =
         dayStart.getTime();
@@ -3432,6 +3622,8 @@ function renderWeeklyBreakdown() {
         });
 
       }
+
+      segments = getCleanDayTimeline(day);
 
       /*
        * Calculate TRACKED time only.
@@ -3934,6 +4126,8 @@ function registerServiceWorker() {
    ================================================== */
 
 initialiseTheme();
+
+migrateLegacyEntriesToCurrentCategories();
 
 buildPills();
 
