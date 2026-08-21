@@ -173,167 +173,6 @@ header {
   margin-top: 2px;
 }
 
-/* ==================================================
-   HEADER ACTIVITY
-   ================================================== */
-
-.header-right {
-  display: flex;
-
-  align-items: center;
-
-  gap: 12px;
-
-  min-width: 0;
-}
-
-
-/* ==================================================
-   ACTIVITY DISPLAY
-   ================================================== */
-
-.header-activity {
-  display: flex;
-
-  align-items: center;
-
-  gap: 8px;
-
-  min-width: 0;
-
-  text-align: right;
-
-  opacity: 0;
-
-  transition:
-    opacity 0.2s ease;
-}
-
-.header-activity.visible {
-  opacity: 1;
-}
-
-
-/* ==================================================
-   ACTIVITY INFORMATION
-   ================================================== */
-
-.header-activity-info {
-  min-width: 0;
-
-  max-width: 150px;
-}
-
-.header-activity-name {
-  font-family:
-    'DM Mono',
-    'Courier New',
-    monospace;
-
-  font-size: 10px;
-
-  color: var(--text);
-
-  white-space: nowrap;
-
-  overflow: hidden;
-
-  text-overflow: ellipsis;
-
-  line-height: 1.2;
-}
-
-.header-activity-meta {
-  font-size: 8px;
-
-  color: var(--text-secondary);
-
-  margin-top: 2px;
-
-  white-space: nowrap;
-
-  overflow: hidden;
-
-  text-overflow: ellipsis;
-}
-
-
-/* ==================================================
-   ACTIVITY TIMER
-   ================================================== */
-
-.header-activity-timer {
-  font-size: 11px;
-
-  color: var(--text-secondary);
-
-  font-variant-numeric:
-    tabular-nums;
-
-  white-space: nowrap;
-
-  min-width: 40px;
-}
-
-
-/* ==================================================
-   ACTIVITY INDICATOR
-   ================================================== */
-
-@keyframes headerPulse {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.35;
-  }
-
-}
-
-
-/* ==================================================
-   UNTRACKED
-   ================================================== */
-
-.header-activity.untracked
-.header-activity-meta {
-  color:
-    var(--text-secondary);
-}
-
-
-/* ==================================================
-   MOBILE
-   ================================================== */
-
-@media (max-width: 480px) {
-
-  .header-right {
-    gap: 8px;
-  }
-
-  .header-activity-info {
-    max-width: 105px;
-  }
-
-  .header-activity-name {
-    font-size: 9px;
-  }
-
-  .header-activity-meta {
-    font-size: 7px;
-  }
-
-  .header-activity-timer {
-    font-size: 10px;
-    min-width: 36px;
-  }
-
-}
-
 
 /* ==================================================
    CONTENT
@@ -361,12 +200,23 @@ main {
 }
 
 /* ==================================================
-   HEADER ACTIONS
-   ================================================== */
+HEADER ACTIONS
+================================================== */
 
 .header-actions {
   display: flex;
   align-items: center;
+}
+
+/* ==================================================
+HEADER RIGHT
+================================================== */
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
 }
 
 
@@ -2001,8 +1851,8 @@ input[type="text"]::placeholder {
 }
 
 /* ==================================================
-   HEADER ACTIVITY — LIQUID GLASS
-   ================================================== */
+HEADER ACTIVITY — LIQUID GLASS
+================================================== */
 
 .header-activity {
   position: relative;
@@ -2014,14 +1864,23 @@ input[type="text"]::placeholder {
 
   min-width: 0;
 
-  padding: 7px 11px;
+  height: 38px;
 
-  /* Match the bottom navigation */
-  background: var(--nav-glass);
+  padding: 0 12px;
 
-  border: 1px solid var(--nav-border);
+  background: color-mix(
+    in srgb,
+    var(--header-category-color, var(--nav-glass)) 18%,
+    var(--nav-glass)
+  );
 
-  border-radius: 24px;
+  border: 1px solid color-mix(
+    in srgb,
+    var(--header-category-color, var(--nav-border)) 55%,
+    var(--nav-border)
+  );
+
+  border-radius: 11px;
 
   box-shadow:
     0 12px 35px rgba(0, 0, 0, 0.20),
@@ -2057,10 +1916,9 @@ input[type="text"]::placeholder {
     scale(1);
 }
 
-
 /* ==================================================
-   GLASS HIGHLIGHT
-   ================================================== */
+GLASS HIGHLIGHT
+================================================== */
 
 .header-activity::after {
   content: "";
@@ -2081,14 +1939,13 @@ input[type="text"]::placeholder {
   pointer-events: none;
 }
 
-
 /* ==================================================
-   ACTIVITY STATUS DOT
-   ================================================== */
+ACTIVITY STATUS DOT
+================================================== */
 
 .header-activity-status {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
 
   flex-shrink: 0;
 
@@ -2112,15 +1969,14 @@ input[type="text"]::placeholder {
   animation: none;
 }
 
-
 /* ==================================================
-   ACTIVITY INFORMATION
-   ================================================== */
+ACTIVITY INFORMATION
+================================================== */
 
 .header-activity-info {
   min-width: 0;
 
-  max-width: 125px;
+  max-width: 140px;
 
   display: flex;
   flex-direction: column;
@@ -2134,7 +1990,7 @@ input[type="text"]::placeholder {
     'Courier New',
     monospace;
 
-  font-size: 9px;
+  font-size: 14px;
 
   color: var(--text);
 
@@ -2148,28 +2004,15 @@ input[type="text"]::placeholder {
 }
 
 .header-activity-meta {
-  font-size: 7px;
-
-  color: var(--text-secondary);
-
-  margin-top: 2px;
-
-  white-space: nowrap;
-
-  overflow: hidden;
-
-  text-overflow: ellipsis;
-
-  line-height: 1;
+  display: none;
 }
 
-
 /* ==================================================
-   ACTIVITY TIMER
-   ================================================== */
+ACTIVITY TIMER
+================================================== */
 
 .header-activity-timer {
-  font-size: 10px;
+  font-size: 14px;
 
   color: var(--text);
 
@@ -2178,15 +2021,14 @@ input[type="text"]::placeholder {
 
   white-space: nowrap;
 
-  min-width: 38px;
+  min-width: 40px;
 
   text-align: right;
 }
 
-
 /* ==================================================
-   PULSE
-   ================================================== */
+PULSE
+================================================== */
 
 @keyframes headerPulse {
 
@@ -2201,10 +2043,9 @@ input[type="text"]::placeholder {
 
 }
 
-
 /* ==================================================
-   UNTRACKED
-   ================================================== */
+UNTRACKED
+================================================== */
 
 .header-activity.untracked {
   background:
@@ -2216,10 +2057,9 @@ input[type="text"]::placeholder {
   color: var(--text-secondary);
 }
 
-
 /* ==================================================
-   MOBILE
-   ================================================== */
+MOBILE
+================================================== */
 
 @media (max-width: 480px) {
 
@@ -2228,30 +2068,32 @@ input[type="text"]::placeholder {
   }
 
   .header-activity {
+    height: 38px;
+
     gap: 7px;
 
     padding:
-      7px 9px;
+      0 10px;
 
-    border-radius: 22px;
+    border-radius: 11px;
   }
 
   .header-activity-info {
-    max-width: 95px;
+    max-width: 105px;
   }
 
   .header-activity-name {
-    font-size: 8px;
+    font-size: 14px;
   }
 
   .header-activity-meta {
-    font-size: 7px;
+    font-size: 14px;
   }
 
   .header-activity-timer {
-    font-size: 9px;
+    font-size: 14px;
 
-    min-width: 34px;
+    min-width: 36px;
   }
 
 }

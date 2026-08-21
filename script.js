@@ -60,7 +60,7 @@ let timerInterval = null;
 
 let insightDate = new Date();
 
-const UNTRACKED_GRACE_MS = 30 * 1000;
+const UNTRACKED_GRACE_MS = 15 * 60 * 1000;
 
 let untrackedEntries = JSON.parse(
   localStorage.getItem('timelog-untracked') || '[]'
@@ -975,7 +975,6 @@ function renderHeaderActivity() {
       'header-activity-timer'
     );
 
-
   /*
    * Active tracked activity
    */
@@ -993,12 +992,19 @@ function renderHeaderActivity() {
       'untracked'
     );
 
+    /*
+     * Set the category colour
+     * for the header background.
+     */
+
+    activity.style.setProperty(
+      '--header-category-color',
+      cat.color
+    );
 
     /*
-     * If the user supplied a custom
-     * label, show it.
-     *
-     * Otherwise leave the name blank.
+     * Show the category symbol
+     * and activity name on one line.
      */
 
     const defaultLabel =
@@ -1008,18 +1014,17 @@ function renderHeaderActivity() {
       active.label &&
       active.label !== defaultLabel;
 
-
     name.textContent =
-      hasCustomLabel
-        ? active.label
-        : '';
-
-
-    meta.textContent =
       cat.emoji +
       ' ' +
-      cat.label;
+      (
+        hasCustomLabel
+          ? active.label
+          : cat.label
+      );
 
+    meta.textContent =
+      '';
 
     timer.textContent =
       fmtDur(
@@ -1029,7 +1034,6 @@ function renderHeaderActivity() {
 
     return;
   }
-
 
   /*
    * No tracked activity.
@@ -1044,14 +1048,15 @@ function renderHeaderActivity() {
       'untracked'
     );
 
+    activity.style.removeProperty(
+      '--header-category-color'
+    );
 
     name.textContent =
-      'Untracked';
-
+      '⏱️ Untracked';
 
     meta.textContent =
       '';
-
 
     timer.textContent =
       fmtDur(
@@ -1062,7 +1067,6 @@ function renderHeaderActivity() {
     return;
   }
 
-
   /*
    * Nothing happening.
    */
@@ -1072,6 +1076,9 @@ function renderHeaderActivity() {
     'untracked'
   );
 
+  activity.style.removeProperty(
+    '--header-category-color'
+  );
 }
 
 
