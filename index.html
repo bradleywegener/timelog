@@ -533,6 +533,64 @@
   timelog <span data-version></span>
 </footer>
 
+<div
+  class="edit-modal-backdrop"
+  id="edit-modal-backdrop"
+  onclick="closeUntrackedEditor()"
+></div>
+
+<div
+  class="edit-modal"
+  id="edit-modal"
+>
+
+  <div class="edit-modal-title">
+    classify untracked time
+  </div>
+
+  <div class="edit-modal-time" id="edit-modal-time">
+  </div>
+
+  <div class="field-label">
+    category
+  </div>
+
+  <div
+    class="cat-pills edit-cat-pills"
+    id="edit-cat-pills"
+  ></div>
+
+  <div class="field-label">
+    what were you doing? (optional)
+  </div>
+
+  <input
+    type="text"
+    id="edit-entry-label"
+    placeholder="e.g. Grocery shopping"
+    autocomplete="off"
+  >
+
+  <div class="edit-modal-actions">
+
+    <button
+      class="btn btn-secondary"
+      onclick="closeUntrackedEditor()"
+    >
+      Cancel
+    </button>
+
+    <button
+      class="btn btn-start"
+      onclick="saveUntrackedClassification()"
+    >
+      Save
+    </button>
+
+  </div>
+
+</div>
+
 
 <script src="script.js"></script>
 

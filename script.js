@@ -56,6 +56,10 @@ let active = JSON.parse(
 
 let selectedCat = 'focus';
 
+let editingUntrackedId = null;
+
+let editingUntrackedCat = 'focus';
+
 let timerInterval = null;
 
 let insightDate = new Date();
@@ -460,6 +464,209 @@ function buildPills() {
 
 }
 
+function openUntrackedEditor(id) {
+
+  const entry =
+    untrackedEntries.find(
+      e => e.id === id
+    );
+
+  if (!entry) {
+    return;
+  }
+
+  editingUntrackedId = id;
+
+  editingUntrackedCat =
+    'focus';
+
+  const modal =
+    document.getElementById(
+      'edit-modal'
+    );
+
+  const backdrop =
+    document.getElementById(
+      'edit-modal-backdrop'
+    );
+
+  const labelInput =
+    document.getElementById(
+      'edit-entry-label'
+    );
+
+  const timeDisplay =
+    document.getElementById(
+      'edit-modal-time'
+    );
+
+  timeDisplay.textContent =
+    `${fmtTime(entry.start)} → ${fmtTime(entry.end)} · ${fmtDur(entry.duration)}`;
+
+  labelInput.value =
+    entry.label || '';
+
+  buildEditCatPills();
+
+  modal.classList.add('open');
+  backdrop.classList.add('open');
+
+}
+
+function buildEditCatPills() {
+
+  const container =
+    document.getElementById(
+      'edit-cat-pills'
+    );
+
+  container.innerHTML = '';
+
+  CATEGORIES.forEach(cat => {
+
+    const pill =
+      document.createElement(
+        'button'
+      );
+
+    pill.className =
+      'cat-pill' +
+      (
+        cat.id === editingUntrackedCat
+          ? ' selected'
+          : ''
+      );
+
+    pill.textContent =
+      cat.emoji +
+      ' ' +
+      cat.label;
+
+    if (
+      cat.id === editingUntrackedCat
+    ) {
+
+      pill.style.borderColor =
+        cat.color;
+
+      pill.style.background =
+        cat.color + '22';
+
+    }
+
+    pill.onclick = () => {
+
+      editingUntrackedCat =
+        cat.id;
+
+      buildEditCatPills();
+
+    };
+
+    container.appendChild(
+      pill
+    );
+
+  });
+
+}
+
+function closeUntrackedEditor() {
+
+  document
+    .getElementById(
+      'edit-modal'
+    )
+    .classList.remove('open');
+
+  document
+    .getElementById(
+      'edit-modal-backdrop'
+    )
+    .classList.remove('open');
+
+  editingUntrackedId =
+    null;
+
+}
+
+function saveUntrackedClassification() {
+
+  if (!editingUntrackedId) {
+    return;
+  }
+
+  const entry =
+    untrackedEntries.find(
+      e =>
+        e.id ===
+        editingUntrackedId
+    );
+
+  if (!entry) {
+    return;
+  }
+
+  const cat =
+    getCat(
+      editingUntrackedCat
+    );
+
+  const label =
+    document
+      .getElementById(
+        'edit-entry-label'
+      )
+      .value
+      .trim();
+
+  /*
+   * Convert the untracked period
+   * into a normal entry.
+   */
+
+  entries.unshift({
+
+    id: Date.now(),
+
+    category:
+      cat.id,
+
+    label:
+      label ||
+      cat.label,
+
+    start:
+      entry.start,
+
+    end:
+      entry.end,
+
+    duration:
+      entry.duration
+
+  });
+
+  /*
+   * Remove it from untracked time.
+   */
+
+  untrackedEntries =
+    untrackedEntries.filter(
+      e =>
+        e.id !==
+        editingUntrackedId
+    );
+
+  saveEntries();
+  saveUntrackedEntries();
+
+  closeUntrackedEditor();
+
+  renderAll();
+
+}
+
 /* ==================================================
    UNTRACKED TIME
    ================================================== */
@@ -504,6 +711,83 @@ function finishUntracked(endTime) {
   untrackedActive = null;
 
   saveUntrackedActive();
+}
+
+function classifyUntrackedEntry(id) {
+
+  const entry =
+    untrackedEntries.find(
+      e => e.id === id
+    );
+
+  if (!entry) {
+    return;
+  }
+
+  const catId =
+    prompt(
+      'Enter category: ' +
+      CATEGORIES
+        .map(c => c.label)
+        .join(', ')
+    );
+
+  if (!catId) {
+    return;
+  }
+
+  const category =
+    CATEGORIES.find(
+      c =>
+        c.label.toLowerCase() ===
+        catId.trim().toLowerCase()
+    );
+
+  if (!category) {
+    alert(
+      'Category not recognised.'
+    );
+    return;
+  }
+
+  const label =
+    prompt(
+      'Enter a name (optional):',
+      category.label
+    );
+
+  /*
+   * Turn the untracked period into
+   * a normal tracked entry.
+   */
+
+  entries.unshift({
+    id: Date.now(),
+    category: category.id,
+    label:
+      label &&
+      label.trim()
+        ? label.trim()
+        : category.label,
+    start: entry.start,
+    end: entry.end,
+    duration: entry.duration
+  });
+
+  /*
+   * Remove it from untracked time.
+   */
+
+  untrackedEntries =
+    untrackedEntries.filter(
+      e => e.id !== id
+    );
+
+  saveEntries();
+  saveUntrackedEntries();
+
+  renderAll();
+
 }
 
 
@@ -631,10 +915,39 @@ function stopTimer() {
 function deleteEntry(id) {
 
   if (!confirm(
-    'Delete this entry?'
+    'Delete this entry? Its time will become untracked.'
   )) {
     return;
   }
+
+  const entry =
+    entries.find(
+      e => e.id === id
+    );
+
+  if (!entry) {
+    return;
+  }
+
+  /*
+   * Convert the deleted activity into
+   * an untracked period.
+   */
+
+  untrackedEntries.unshift({
+    id: Date.now(),
+    start: entry.start,
+    end: entry.end,
+    duration: entry.duration,
+    label: null,
+    category: null
+  });
+
+  saveUntrackedEntries();
+
+  /*
+   * Now remove the original tracked entry.
+   */
 
   entries =
     entries.filter(
@@ -1244,13 +1557,29 @@ function renderLog() {
               ${fmtDur(entry.duration)}
             </div>
 
-            <button
-              class="btn-del"
-              onclick="deleteEntry(${entry.id})"
-              aria-label="Delete entry"
-            >
-              ×
-            </button>
+            ${
+              isUntracked
+
+                ? `
+                  <button
+                    class="btn-edit"
+                    onclick="openUntrackedEditor(${entry.id})"
+                    aria-label="Classify untracked time"
+                  >
+                    ✎
+                  </button>
+                `
+
+                : `
+                  <button
+                    class="btn-del"
+                    onclick="deleteEntry(${entry.id})"
+                    aria-label="Delete entry"
+                  >
+                    ×
+                  </button>
+                `
+            }
 
           `;
 
