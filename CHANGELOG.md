@@ -2,6 +2,13 @@
 
 All notable changes to timelog are documented here.
 
+## [0.2.2] - 2026-08-20
+
+### Changes
+- Lots of things, I did a poor job of keeping track
+
+---
+
 ## [0.2.1] - 2026-08-20
 
 ### Added
