@@ -2,6 +2,14 @@
 
 All notable changes to timelog are documented here.
 
+## [0.2.5] - 2026-08-21
+
+### Fixed
+- Fixed service-worker cache version reassignment.
+- Service-worker updates are now triggered from `version.json`.
+
+---
+
 ## [0.2.4] - 2026-08-21
 
 ### Added

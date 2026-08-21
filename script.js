@@ -4156,9 +4156,25 @@ function registerServiceWorker() {
 
         try {
 
+          const versionResponse =
+            await fetch('version.json', {
+              cache: 'no-store'
+            });
+
+          if (!versionResponse.ok) {
+            throw new Error(
+              'Could not load version.json'
+            );
+          }
+
+          const versionData =
+            await versionResponse.json();
+
           const registration =
             await navigator.serviceWorker.register(
-              'sw.js'
+              `sw.js?v=${encodeURIComponent(
+                versionData.version
+              )}`
             );
 
           console.log(

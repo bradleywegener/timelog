@@ -1,4 +1,4 @@
-const CACHE_NAME = 'timelog-v0.2.4';
+let CACHE_NAME = 'timelog-installing';
 
 const APP_FILES = [
   './',
