@@ -608,9 +608,44 @@ function getCleanDayTimeline(date) {
     active.start < visibleEnd &&
     active.start < end
   ) {
+
+    const activeEnd =
+      Math.min(Date.now(), visibleEnd);
+
+    const nonOverlappingTracked = [];
+
+    tracked.forEach(entry => {
+
+      if (
+        entry.end <= active.start ||
+        entry.start >= activeEnd
+      ) {
+        nonOverlappingTracked.push(entry);
+        return;
+      }
+
+      if (entry.start < active.start) {
+        nonOverlappingTracked.push({
+          ...entry,
+          end: active.start
+        });
+      }
+
+      if (entry.end > activeEnd) {
+        nonOverlappingTracked.push({
+          ...entry,
+          start: activeEnd
+        });
+      }
+
+    });
+
+    tracked.length = 0;
+    tracked.push(...nonOverlappingTracked);
+
     tracked.push({
       start: Math.max(active.start, start),
-      end: Math.min(Date.now(), visibleEnd),
+      end: activeEnd,
       category: active.category
     });
   }
@@ -687,7 +722,7 @@ function getCleanDayTimeline(date) {
       ];
 
     if (
-      segment.start <=
+      segment.start <
       previous.end
     ) {
 
@@ -1681,6 +1716,8 @@ function startTimer() {
 
   renderTrack();
 
+  renderLog();
+
   startTick();
 }
 
@@ -1884,6 +1921,8 @@ function startTick() {
      */
 
     renderHeaderActivity();
+
+    renderLog();
 
   }, 1000);
 
@@ -2323,22 +2362,25 @@ function getLogDisplayEntries() {
 
       if (segment.category) {
 
-        const source = entries.find(entry =>
+        const activeSource =
+          active &&
+          active.category === segment.category &&
+          active.start < segment.end &&
+          active.start >= segment.start
+            ? active
+            : null;
+
+        const source = activeSource || entries.find(entry =>
           entry.category === segment.category &&
           entry.start < segment.end &&
           entry.end > segment.start
-        ) || (
-          active &&
-          active.category === segment.category &&
-          active.start < segment.end
-            ? active
-            : null
         );
 
         displayEntries.push({
           ...(source || {}),
           id: source?.id || `tracked-${segment.start}`,
           type: 'tracked',
+          current: source === active,
           start: segment.start,
           end: segment.end,
           duration: segment.end - segment.start,
@@ -2366,6 +2408,7 @@ function getLogDisplayEntries() {
             displayEntries.push({
               id: `untracked-${cursor}`,
               type: 'untracked',
+              current: false,
               start: cursor,
               end: start,
               duration: start - cursor,
@@ -2378,6 +2421,7 @@ function getLogDisplayEntries() {
             displayEntries.push({
               ...entry,
               type: 'untracked',
+              current: false,
               start,
               end,
               duration: end - start
@@ -2392,6 +2436,11 @@ function getLogDisplayEntries() {
         displayEntries.push({
           id: `untracked-${cursor}`,
           type: 'untracked',
+          current:
+            Boolean(
+              untrackedActive &&
+              untrackedActive.start === cursor
+            ),
           start: cursor,
           end: segment.end,
           duration: segment.end - cursor,
@@ -2641,7 +2690,8 @@ function renderLog() {
               );
 
             div.className =
-              'entry';
+              'entry' +
+              (entry.current ? ' entry-current' : '');
 
             div.innerHTML = `
 
@@ -2667,6 +2717,11 @@ function renderLog() {
                       ? 'Untracked Time'
                       : entry.label
                   }
+                  ${
+                    entry.current
+                      ? '<span class="current-badge">CURRENT</span>'
+                      : ''
+                  }
                 </div>
 
                 <div class="entry-meta">
@@ -2682,7 +2737,15 @@ function renderLog() {
               </div>
 
               <div class="entry-dur">
-                ${fmtDur(entry.duration)}
+                <span
+                  ${
+                    entry.current
+                      ? `data-current-start="${entry.start}"`
+                      : ''
+                  }
+                >
+                  ${fmtDur(entry.duration)}
+                </span>
               </div>
 
               ${
@@ -2708,7 +2771,9 @@ function renderLog() {
                       : ''
                   )
 
-                  : `
+                  : entry.current
+                    ? ''
+                    : `
                     <button
                       class="btn-del"
                       onclick="
@@ -4035,6 +4100,10 @@ function switchView(v, btn) {
   btn.classList.add(
     'active'
   );
+
+  if (v === 'log') {
+    renderLog();
+  }
 
 
   document

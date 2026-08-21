@@ -2,6 +2,16 @@
 
 All notable changes to timelog are documented here.
 
+## [0.2.4] - 2026-08-21
+
+### Added
+- Log now shows current activity
+
+### Fixed
+- Bugs in log that would produce current activity unintentionally 
+
+---
+
 ## [0.2.3] - 2026-08-20
 
 ### Changes
