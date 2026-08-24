@@ -2,6 +2,19 @@
 
 All notable changes to timelog are documented here.
 
+## [0.2.6] - 2026-08-24
+
+### Added
+- Insights now update live while an activity is being tracked, including daily category totals and weekly totals.
+- Untracked activities can be split into two activities with separate names and categories.
+- Delete confirmations and invalid split-time warnings now appear within the app.
+
+### Fixed
+- Insights breakdown bars no longer replay their entrance animation from zero during live updates.
+- Confirmed activity deletion now correctly converts the activity to untracked time and removes the original entry.
+
+---
+
 ## [0.2.5] - 2026-08-21
 
 ### Fixed

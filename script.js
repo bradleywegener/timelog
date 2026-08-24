@@ -60,6 +60,10 @@ let editingUntrackedId = null;
 
 let editingUntrackedCat = 'focus';
 
+let editingSplitCat = 'focus';
+
+let appMessageAction = null;
+
 let timerInterval = null;
 
 let insightDate = new Date();
@@ -937,6 +941,9 @@ function openUntrackedEditor(id) {
   editingUntrackedCat =
     'focus';
 
+  editingSplitCat =
+    'focus';
+
   const modal =
     document.getElementById(
       'edit-modal'
@@ -963,18 +970,86 @@ function openUntrackedEditor(id) {
   labelInput.value =
     entry.label || '';
 
+  document
+    .getElementById('split-fields')
+    .hidden = true;
+
+  document
+    .getElementById('split-toggle')
+    .textContent = 'Split activity';
+
+  document
+    .getElementById('edit-save-button')
+    .textContent = 'Save';
+
+  document
+    .getElementById('edit-split-time')
+    .value = getMidpointDateTimeValue(
+      entry.start,
+      entry.end
+    );
+
+  document
+    .getElementById('edit-split-label')
+    .value = '';
+
   buildEditCatPills();
+
+  buildEditCatPills(
+    'edit-split-cat-pills',
+    'split'
+  );
 
   modal.classList.add('open');
   backdrop.classList.add('open');
 
 }
 
-function buildEditCatPills() {
+function getMidpointDateTimeValue(start, end) {
+
+  const midpoint = new Date(
+    start +
+    Math.floor((end - start) / 2)
+  );
+
+  const pad = value =>
+    String(value).padStart(2, '0');
+
+  return `${midpoint.getFullYear()}-${pad(midpoint.getMonth() + 1)}-${pad(midpoint.getDate())}T${pad(midpoint.getHours())}:${pad(midpoint.getMinutes())}:${pad(midpoint.getSeconds())}`;
+
+}
+
+function toggleUntrackedSplit() {
+
+  const fields =
+    document.getElementById('split-fields');
+
+  const enabled = fields.hidden;
+
+  fields.hidden = !enabled;
+
+  document
+    .getElementById('split-toggle')
+    .textContent = enabled
+      ? 'Keep as one activity'
+      : 'Split activity';
+
+  document
+    .getElementById('edit-save-button')
+    .textContent = enabled
+      ? 'Split & Save'
+      : 'Save';
+
+}
+
+function buildEditCatPills(
+  containerId = 'edit-cat-pills',
+  categoryType = 'primary'
+) {
 
   const container =
     document.getElementById(
-      'edit-cat-pills'
+      containerId
     );
 
   container.innerHTML = '';
@@ -989,7 +1064,11 @@ function buildEditCatPills() {
     pill.className =
       'cat-pill' +
       (
-        cat.id === editingUntrackedCat
+        (
+          categoryType === 'primary'
+            ? cat.id === editingUntrackedCat
+            : cat.id === editingSplitCat
+        )
           ? ' selected'
           : ''
       );
@@ -1000,7 +1079,11 @@ function buildEditCatPills() {
       cat.label;
 
     if (
-      cat.id === editingUntrackedCat
+      (
+        categoryType === 'primary'
+          ? cat.id === editingUntrackedCat
+          : cat.id === editingSplitCat
+      )
     ) {
 
       pill.style.borderColor =
@@ -1013,10 +1096,16 @@ function buildEditCatPills() {
 
     pill.onclick = () => {
 
-      editingUntrackedCat =
-        cat.id;
+      if (categoryType === 'primary') {
+        editingUntrackedCat = cat.id;
+      } else {
+        editingSplitCat = cat.id;
+      }
 
-      buildEditCatPills();
+      buildEditCatPills(
+        containerId,
+        categoryType
+      );
 
     };
 
@@ -1047,6 +1136,79 @@ function closeUntrackedEditor() {
 
 }
 
+function showAppMessage(
+  message,
+  options = {}
+) {
+
+  const modal =
+    document.getElementById('message-modal');
+
+  document
+    .getElementById('message-modal-title')
+    .textContent = options.title || 'Notice';
+
+  document
+    .getElementById('message-modal-text')
+    .textContent = message;
+
+  const cancelButton =
+    document.getElementById('message-cancel-button');
+
+  const confirmButton =
+    document.getElementById('message-confirm-button');
+
+  cancelButton.hidden = !options.confirm;
+  confirmButton.hidden = !options.confirm;
+
+  if (!options.confirm) {
+    cancelButton.hidden = false;
+    cancelButton.textContent = 'Close';
+  } else {
+    cancelButton.textContent = 'Cancel';
+  }
+
+  appMessageAction =
+    options.confirm
+      ? options.onConfirm
+      : null;
+
+  modal.classList.add('open');
+
+  document
+    .getElementById('message-modal-backdrop')
+    .classList.add('open');
+
+  modal.setAttribute('aria-hidden', 'false');
+
+}
+
+function closeAppMessage(confirmed) {
+
+  const modal =
+    document.getElementById('message-modal');
+
+  modal.classList.remove('open');
+
+  document
+    .getElementById('message-modal-backdrop')
+    .classList.remove('open');
+
+  modal.setAttribute('aria-hidden', 'true');
+
+  const action =
+    confirmed
+      ? appMessageAction
+      : null;
+
+  appMessageAction = null;
+
+  if (action) {
+    action();
+  }
+
+}
+
 function saveUntrackedClassification() {
 
   if (!editingUntrackedId) {
@@ -1062,6 +1224,84 @@ function saveUntrackedClassification() {
 
   if (!entry) {
     return;
+  }
+
+  const splitFields =
+    document.getElementById('split-fields');
+
+  if (!splitFields.hidden) {
+
+    const splitTime = new Date(
+      document
+        .getElementById('edit-split-time')
+        .value
+    ).getTime();
+
+    if (
+      !Number.isFinite(splitTime)
+      || splitTime <= entry.start
+      || splitTime >= entry.end
+    ) {
+
+      showAppMessage(
+        'Choose a split time between the activity start and end.'
+      );
+
+      return;
+
+    }
+
+    const firstCat =
+      getCat(editingUntrackedCat);
+
+    const secondCat =
+      getCat(editingSplitCat);
+
+    const firstLabel =
+      document
+        .getElementById('edit-entry-label')
+        .value
+        .trim()
+      || firstCat.label;
+
+    const secondLabel =
+      document
+        .getElementById('edit-split-label')
+        .value
+        .trim()
+      || secondCat.label;
+
+    entries.unshift(
+      {
+        id: splitTime - 1,
+        category: secondCat.id,
+        label: secondLabel,
+        start: splitTime,
+        end: entry.end,
+        duration: entry.end - splitTime
+      },
+      {
+        id: splitTime,
+        category: firstCat.id,
+        label: firstLabel,
+        start: entry.start,
+        end: splitTime,
+        duration: splitTime - entry.start
+      }
+    );
+
+    untrackedEntries =
+      untrackedEntries.filter(
+        e => e.id !== editingUntrackedId
+      );
+
+    saveEntries();
+    saveUntrackedEntries();
+    closeUntrackedEditor();
+    renderAll();
+
+    return;
+
   }
 
   const cat =
@@ -1768,11 +2008,27 @@ function stopTimer() {
 
 function deleteEntry(id) {
 
-  if (!confirm(
-    'Delete this entry? Its time will become untracked.'
-  )) {
+  const entry =
+    entries.find(
+      e => e.id === id
+    );
+
+  if (!entry) {
     return;
   }
+
+  showAppMessage(
+    'Delete this entry? Its time will become untracked.',
+    {
+      title: 'Delete entry',
+      confirm: true,
+      onConfirm: () => deleteEntryConfirmed(id)
+    }
+  );
+
+}
+
+function deleteEntryConfirmed(id) {
 
   const entry =
     entries.find(
@@ -1923,6 +2179,8 @@ function startTick() {
     renderHeaderActivity();
 
     renderLog();
+
+    renderInsights();
 
   }, 1000);
 
@@ -3114,6 +3372,39 @@ function renderSelectedDay() {
 
   segments = getCleanDayTimeline(insightDate);
 
+  CATEGORIES.forEach(cat => {
+
+    categoryTotals[cat.id] = 0;
+
+  });
+
+  untrackedTotal = 0;
+
+  segments.forEach(segment => {
+
+    const duration =
+      segment.end -
+      segment.start;
+
+    if (
+      segment.category &&
+      categoryTotals[
+        segment.category
+      ] !== undefined
+    ) {
+
+      categoryTotals[
+        segment.category
+      ] += duration;
+
+    } else {
+
+      untrackedTotal += duration;
+
+    }
+
+  });
+
   /*
    * Calculate tracked total from
    * the category totals.
@@ -3295,6 +3586,9 @@ function renderSelectedDay() {
 
   barsEl.innerHTML = '';
 
+  const animateBars =
+    !barsEl.dataset.rendered;
+
   /*
    * Render bars.
    */
@@ -3330,7 +3624,7 @@ function renderSelectedDay() {
         <div
           class="bar-fill"
           style="
-            width:0%;
+            width:${animateBars ? 0 : cat.pct}%;
             background:${cat.color};
           "
           data-pct="${cat.pct}"
@@ -3403,6 +3697,8 @@ function renderSelectedDay() {
       });
 
   }, 50);
+
+  barsEl.dataset.rendered = 'true';
 
 }
 

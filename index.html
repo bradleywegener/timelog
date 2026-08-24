@@ -571,6 +571,53 @@
     autocomplete="off"
   >
 
+  <button
+    class="split-toggle"
+    id="split-toggle"
+    type="button"
+    onclick="toggleUntrackedSplit()"
+  >
+    Split activity
+  </button>
+
+  <div
+    class="split-fields"
+    id="split-fields"
+    hidden
+  >
+
+    <div class="field-label">
+      split at
+    </div>
+
+    <input
+      type="datetime-local"
+      id="edit-split-time"
+      step="1"
+    >
+
+    <div class="field-label">
+      second activity category
+    </div>
+
+    <div
+      class="cat-pills edit-cat-pills"
+      id="edit-split-cat-pills"
+    ></div>
+
+    <div class="field-label">
+      second activity name (optional)
+    </div>
+
+    <input
+      type="text"
+      id="edit-split-label"
+      placeholder="e.g. Reading"
+      autocomplete="off"
+    >
+
+  </div>
+
   <div class="edit-modal-actions">
 
     <button
@@ -582,9 +629,61 @@
 
     <button
       class="btn btn-start"
+      id="edit-save-button"
       onclick="saveUntrackedClassification()"
     >
       Save
+    </button>
+
+  </div>
+
+</div>
+
+<div
+  class="message-modal-backdrop"
+  id="message-modal-backdrop"
+  onclick="closeAppMessage(false)"
+></div>
+
+<div
+  class="message-modal"
+  id="message-modal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="message-modal-title"
+  aria-hidden="true"
+>
+
+  <div
+    class="edit-modal-title"
+    id="message-modal-title"
+  >
+    Please confirm
+  </div>
+
+  <div
+    class="message-modal-text"
+    id="message-modal-text"
+  ></div>
+
+  <div class="edit-modal-actions">
+
+    <button
+      class="btn btn-secondary"
+      id="message-cancel-button"
+      type="button"
+      onclick="closeAppMessage(false)"
+    >
+      Cancel
+    </button>
+
+    <button
+      class="btn btn-start"
+      id="message-confirm-button"
+      type="button"
+      onclick="closeAppMessage(true)"
+    >
+      Confirm
     </button>
 
   </div>

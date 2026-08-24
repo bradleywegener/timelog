@@ -2182,6 +2182,37 @@ MOBILE
   margin-bottom: 20px;
 }
 
+.split-toggle {
+  display: block;
+
+  margin-top: 16px;
+
+  padding: 0;
+
+  border: none;
+  background: transparent;
+
+  color: var(--accent);
+
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.split-toggle:hover {
+  text-decoration: underline;
+}
+
+.split-fields {
+  margin-top: 20px;
+}
+
+.split-fields input[type="datetime-local"] {
+  color-scheme: inherit;
+}
+
 .edit-modal-actions {
   display: flex;
   gap: 10px;
@@ -2191,6 +2222,71 @@ MOBILE
 
 .edit-modal-actions .btn {
   flex: 1;
+}
+
+.message-modal-backdrop {
+  position: fixed;
+  inset: 0;
+
+  background: rgba(0, 0, 0, 0.45);
+
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+
+  opacity: 0;
+  pointer-events: none;
+
+  transition: opacity 0.2s ease;
+
+  z-index: 300;
+}
+
+.message-modal-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.message-modal {
+  position: fixed;
+
+  left: 50%;
+  bottom: 30px;
+
+  width: min(
+    420px,
+    calc(100% - 32px)
+  );
+
+  transform: translate(-50%, 20px);
+
+  opacity: 0;
+  pointer-events: none;
+
+  padding: 24px;
+
+  border-radius: 24px;
+
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+
+  z-index: 301;
+
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.message-modal.open {
+  opacity: 1;
+  pointer-events: auto;
+
+  transform: translate(-50%, 0);
+}
+
+.message-modal-text {
+  color: var(--text-secondary);
+  line-height: 1.5;
 }
 
 .btn-edit {
