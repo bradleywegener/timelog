@@ -211,6 +211,31 @@
 
     </button>
 
+    <button
+      class="menu-item menu-item-button"
+      onclick="openCategoryEditor()"
+    >
+
+      <div class="menu-item-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 5v14"></path>
+          <path d="M5 12h14"></path>
+        </svg>
+      </div>
+
+      <div class="menu-item-text">
+        <div class="menu-item-title">Category manager</div>
+        <div class="menu-item-subtitle">
+          Manage activity types
+        </div>
+      </div>
+
+      <div class="menu-item-chevron">
+        ›
+      </div>
+
+    </button>
+
   </div>
 
 
@@ -681,6 +706,86 @@
 </div>
 
 <div
+  class="edit-modal-backdrop"
+  id="category-modal-backdrop"
+  onclick="closeCategoryEditor()"
+></div>
+
+<div
+  class="edit-modal category-modal"
+  id="category-modal"
+>
+
+  <div
+    class="edit-modal-title"
+    id="category-modal-title"
+  >
+    category manager
+  </div>
+
+  <div
+    class="category-list"
+    id="category-list"
+  ></div>
+
+  <div class="field-label">
+    category name
+  </div>
+
+  <input
+    type="text"
+    id="category-name"
+    placeholder="e.g. Exercise"
+    autocomplete="off"
+  >
+
+  <div class="field-label category-field-label">
+    emoji
+  </div>
+
+  <input
+    type="text"
+    id="category-emoji"
+    placeholder="e.g. 💪"
+    maxlength="4"
+    autocomplete="off"
+  >
+
+  <div class="field-label category-field-label">
+    colour
+  </div>
+
+  <input
+    class="category-color"
+    type="color"
+    id="category-color"
+    value="#5FB38A"
+  >
+
+  <div class="edit-modal-actions">
+
+    <button
+      class="btn btn-secondary"
+      type="button"
+      onclick="closeCategoryEditor()"
+    >
+      Cancel
+    </button>
+
+    <button
+      class="btn btn-start"
+      id="category-save-button"
+      type="button"
+      onclick="saveNewCategory()"
+    >
+      Add
+    </button>
+
+  </div>
+
+</div>
+
+<div
   class="message-modal-backdrop"
   id="message-modal-backdrop"
   onclick="closeAppMessage(false)"
@@ -725,6 +830,55 @@
       onclick="closeAppMessage(true)"
     >
       Confirm
+    </button>
+
+  </div>
+
+</div>
+
+<div
+  class="edit-modal-backdrop"
+  id="category-delete-modal-backdrop"
+  onclick="closeCategoryDelete()"
+></div>
+
+<div
+  class="edit-modal category-delete-modal"
+  id="category-delete-modal"
+>
+
+  <div class="edit-modal-title">
+    delete category
+  </div>
+
+  <div class="message-modal-text">
+    Choose a category for its existing activities.
+  </div>
+
+  <div class="field-label category-field-label">
+    move activities to
+  </div>
+
+  <select
+    id="category-delete-target"
+  ></select>
+
+  <div class="edit-modal-actions">
+
+    <button
+      class="btn btn-secondary"
+      type="button"
+      onclick="closeCategoryDelete()"
+    >
+      Cancel
+    </button>
+
+    <button
+      class="btn btn-start"
+      type="button"
+      onclick="confirmCategoryDelete()"
+    >
+      Delete
     </button>
 
   </div>
