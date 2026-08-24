@@ -2,6 +2,16 @@
 
 All notable changes to timelog are documented here.
 
+## [0.3.0] - 2026-08-24
+
+### Added
+- Category manager to the menu
+- Create new categories. Assign name, emoji, colour
+- Edit existing categories
+- Delete categories and migrate previous activities to a new category
+
+---
+
 ## [0.2.7] - 2026-08-24
 
 ### Added

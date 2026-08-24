@@ -2,7 +2,7 @@
    CATEGORIES
    ================================================== */
 
-const CATEGORIES = [
+const BUILT_IN_CATEGORIES = [
   {
     id: 'focus',
     label: 'Focus',
@@ -41,6 +41,26 @@ const CATEGORIES = [
   }
 ];
 
+const categoryOverrides = JSON.parse(
+  localStorage.getItem('timelog-category-overrides') || '{}'
+);
+
+const deletedCategoryIds = JSON.parse(
+  localStorage.getItem('timelog-deleted-categories') || '[]'
+);
+
+let CATEGORIES = [
+  ...BUILT_IN_CATEGORIES
+    .filter(category => !deletedCategoryIds.includes(category.id))
+    .map(category => ({
+      ...category,
+      ...(categoryOverrides[category.id] || {})
+    })),
+  ...JSON.parse(
+    localStorage.getItem('timelog-custom-categories') || '[]'
+  )
+];
+
 
 /* ==================================================
    STATE
@@ -63,6 +83,8 @@ let editingUntrackedCat = 'focus';
 let editingSplitCat = 'focus';
 
 let appMessageAction = null;
+
+let editingCategoryId = null;
 
 let timerInterval = null;
 
@@ -278,6 +300,352 @@ function closeMenu() {
     'aria-hidden',
     'true'
   );
+
+}
+
+function saveCustomCategories() {
+
+  localStorage.setItem(
+    'timelog-custom-categories',
+    JSON.stringify(
+      CATEGORIES.filter(
+        category =>
+          !BUILT_IN_CATEGORIES.some(
+            item => item.id === category.id
+          )
+      )
+    )
+  );
+
+}
+
+function openCategoryEditor() {
+
+  closeMenu();
+
+  document
+    .getElementById('category-modal')
+    .classList.add('open');
+
+  document
+    .getElementById('category-modal-backdrop')
+    .classList.add('open');
+
+  document
+    .getElementById('category-name')
+    .focus();
+
+  renderCategoryList();
+  resetCategoryForm();
+
+}
+
+function resetCategoryForm() {
+
+  editingCategoryId = null;
+
+  document
+    .getElementById('category-modal-title')
+    .textContent = 'add category';
+
+  document
+    .getElementById('category-save-button')
+    .textContent = 'Add';
+
+  document
+    .getElementById('category-name')
+    .value = '';
+
+  document
+    .getElementById('category-emoji')
+    .value = '';
+
+  document
+    .getElementById('category-color')
+    .value = getRandomCategoryColor();
+
+}
+
+function editCategory(id) {
+
+  const category = CATEGORIES.find(
+    item => item.id === id
+  );
+
+  if (!category) {
+    return;
+  }
+
+  editingCategoryId = id;
+
+  document
+    .getElementById('category-modal-title')
+    .textContent = 'edit category';
+
+  document
+    .getElementById('category-save-button')
+    .textContent = 'Save';
+
+  document
+    .getElementById('category-name')
+    .value = category.label;
+
+  document
+    .getElementById('category-emoji')
+    .value = category.emoji;
+
+  document
+    .getElementById('category-color')
+    .value = category.color;
+
+}
+
+function renderCategoryList() {
+
+  const list =
+    document.getElementById('category-list');
+
+  list.innerHTML = CATEGORIES.map(category => `
+    <div
+      class="category-list-item"
+    >
+      <span
+        class="category-list-swatch"
+        style="background:${category.color}"
+      ></span>
+      <span>${category.emoji} ${category.label}</span>
+      <button
+        class="category-list-action"
+        type="button"
+        onclick="editCategory('${category.id}')"
+      >
+        Edit
+      </button>
+      <button
+        class="category-list-action category-list-delete"
+        type="button"
+        onclick="openCategoryDelete('${category.id}')"
+        aria-label="Delete ${category.label} category"
+      >
+        Delete
+      </button>
+    </div>
+  `).join('');
+
+}
+
+function openCategoryDelete(id) {
+
+  if (CATEGORIES.length < 2) {
+    showAppMessage(
+      'At least one category must remain.'
+    );
+    return;
+  }
+
+  const category = CATEGORIES.find(
+    item => item.id === id
+  );
+
+  if (!category) {
+    return;
+  }
+
+  const target =
+    document.getElementById('category-delete-target');
+
+  target.innerHTML = CATEGORIES
+    .filter(item => item.id !== id)
+    .map(item => `
+      <option value="${item.id}">
+        ${item.emoji} ${item.label}
+      </option>
+    `)
+    .join('');
+
+  target.dataset.categoryId = id;
+
+  document
+    .getElementById('category-delete-modal')
+    .classList.add('open');
+
+  document
+    .getElementById('category-delete-modal-backdrop')
+    .classList.add('open');
+
+}
+
+function closeCategoryDelete() {
+
+  document
+    .getElementById('category-delete-modal')
+    .classList.remove('open');
+
+  document
+    .getElementById('category-delete-modal-backdrop')
+    .classList.remove('open');
+
+}
+
+function confirmCategoryDelete() {
+
+  const target =
+    document.getElementById('category-delete-target');
+
+  const deletedId = target.dataset.categoryId;
+  const targetId = target.value;
+
+  if (!deletedId || !targetId || deletedId === targetId) {
+    return;
+  }
+
+  entries = entries.map(entry =>
+    entry.category === deletedId
+      ? { ...entry, category: targetId }
+      : entry
+  );
+
+  if (active && active.category === deletedId) {
+    active = {
+      ...active,
+      category: targetId
+    };
+
+    localStorage.setItem(
+      'timelog-active',
+      JSON.stringify(active)
+    );
+  }
+
+  CATEGORIES = CATEGORIES.filter(
+    category => category.id !== deletedId
+  );
+
+  if (
+    BUILT_IN_CATEGORIES.some(
+      item => item.id === deletedId
+    )
+  ) {
+    localStorage.setItem(
+      'timelog-deleted-categories',
+      JSON.stringify(
+        deletedCategoryIds.includes(deletedId)
+          ? deletedCategoryIds
+          : [
+              ...deletedCategoryIds,
+              deletedId
+            ]
+      )
+    );
+  }
+
+  saveCategoryOverrides();
+  saveCustomCategories();
+  saveEntries();
+
+  if (selectedCat === deletedId) {
+    selectedCat = targetId;
+  }
+
+  closeCategoryDelete();
+  closeCategoryEditor();
+  renderCategoryList();
+  renderAll();
+
+}
+
+function closeCategoryEditor() {
+
+  document
+    .getElementById('category-modal')
+    .classList.remove('open');
+
+  document
+    .getElementById('category-modal-backdrop')
+    .classList.remove('open');
+
+}
+
+function saveNewCategory() {
+
+  const name = document
+    .getElementById('category-name')
+    .value
+    .trim();
+
+  const emoji = document
+    .getElementById('category-emoji')
+    .value
+    .trim();
+
+  const color = document
+    .getElementById('category-color')
+    .value;
+
+  if (!name || !emoji) {
+    showAppMessage(
+      'Enter a name and an emoji for the new category.'
+    );
+    return;
+  }
+
+  if (
+    CATEGORIES.some(
+      category =>
+        category.id !== editingCategoryId
+        &&
+        category.label.toLowerCase() === name.toLowerCase()
+    )
+  ) {
+    showAppMessage(
+      'A category with that name already exists.'
+    );
+    return;
+  }
+
+  if (editingCategoryId) {
+
+    const category = CATEGORIES.find(
+      item => item.id === editingCategoryId
+    );
+
+    category.label = name;
+    category.emoji = emoji;
+    category.color = color;
+
+    saveCategoryOverrides();
+    saveCustomCategories();
+    renderCategoryList();
+    renderAll();
+    resetCategoryForm();
+    closeCategoryEditor();
+
+    return;
+
+  }
+
+  const id = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    || `category-${Date.now()}`;
+
+  const category = {
+    id: `${id}-${Date.now()}`,
+    label: name,
+    emoji,
+    color
+  };
+
+  CATEGORIES.push(category);
+  saveCustomCategories();
+
+  selectedCat = category.id;
+
+  renderCategoryList();
+  resetCategoryForm();
+  closeCategoryEditor();
+  renderAll();
 
 }
 
@@ -4634,4 +5002,62 @@ registerServiceWorker();
 
 if (active || untrackedActive) {
   startTick();
+}
+
+function saveCategoryOverrides() {
+
+  const overrides = {};
+
+  CATEGORIES
+    .filter(category =>
+      BUILT_IN_CATEGORIES.some(
+        item => item.id === category.id
+      )
+    )
+    .forEach(category => {
+
+      const original = BUILT_IN_CATEGORIES.find(
+        item => item.id === category.id
+      );
+
+      if (
+        category.label !== original.label
+        || category.emoji !== original.emoji
+        || category.color !== original.color
+      ) {
+        overrides[category.id] = {
+          label: category.label,
+          emoji: category.emoji,
+          color: category.color
+        };
+      }
+
+    });
+
+  localStorage.setItem(
+    'timelog-category-overrides',
+    JSON.stringify(overrides)
+  );
+
+}
+
+function getRandomCategoryColor() {
+
+  const existingColors = new Set(
+    CATEGORIES.map(category =>
+      category.color.toLowerCase()
+    )
+  );
+
+  let color;
+
+  do {
+    color = '#'
+      + Math.floor(Math.random() * 0x1000000)
+        .toString(16)
+        .padStart(6, '0');
+  } while (existingColors.has(color));
+
+  return color;
+
 }
