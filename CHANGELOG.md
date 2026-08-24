@@ -2,6 +2,19 @@
 
 All notable changes to timelog are documented here.
 
+## [0.3.1] - 2026-08-25
+
+### Changed
+- Separated the category menu into distinct Add category and Manage categories actions.
+- Standardised the category menu titles to consistent capitalisation.
+- Removed the duplicate add-category label from the add form.
+- Updated the day's breakdown on the Insights page to show all configured categories, including zero-time categories for the selected day.
+
+### Fixed
+- Fixed the category modal so each menu opens the correct view.
+
+---
+
 ## [0.3.0] - 2026-08-24
 
 ### Added

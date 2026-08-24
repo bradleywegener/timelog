@@ -319,7 +319,22 @@ function saveCustomCategories() {
 
 }
 
-function openCategoryEditor() {
+function setCategoryView(mode = 'manage') {
+
+  const manageView = document.getElementById('category-manage-view');
+  const addView = document.getElementById('category-add-view');
+  const saveButton = document.getElementById('category-save-button');
+  const title = document.getElementById('category-modal-title');
+  const isAddMode = mode === 'add';
+
+  manageView.hidden = isAddMode;
+  addView.hidden = !isAddMode;
+  saveButton.hidden = !isAddMode;
+  title.textContent = isAddMode ? 'Add category' : 'Manage categories';
+
+}
+
+function openCategoryEditor(mode = 'manage') {
 
   closeMenu();
 
@@ -331,22 +346,22 @@ function openCategoryEditor() {
     .getElementById('category-modal-backdrop')
     .classList.add('open');
 
-  document
-    .getElementById('category-name')
-    .focus();
-
   renderCategoryList();
-  resetCategoryForm();
+  resetCategoryForm(mode);
+
+  if (mode === 'add') {
+    document
+      .getElementById('category-name')
+      .focus();
+  }
 
 }
 
-function resetCategoryForm() {
+function resetCategoryForm(mode = 'manage') {
 
   editingCategoryId = null;
 
-  document
-    .getElementById('category-modal-title')
-    .textContent = 'add category';
+  setCategoryView(mode);
 
   document
     .getElementById('category-save-button')
@@ -377,6 +392,7 @@ function editCategory(id) {
   }
 
   editingCategoryId = id;
+  setCategoryView('add');
 
   document
     .getElementById('category-modal-title')
@@ -397,6 +413,10 @@ function editCategory(id) {
   document
     .getElementById('category-color')
     .value = category.color;
+
+  document
+    .getElementById('category-name')
+    .focus();
 
 }
 
@@ -3983,35 +4003,15 @@ function renderSelectedDay() {
     );
 
   /*
-   * No data.
-   */
-  if (!total) {
-
-    barsEl.innerHTML = `
-      <div class="empty empty-small">
-        No data for this day.
-      </div>
-    `;
-
-    return;
-
-  }
-
-  /*
    * Build category list.
    */
-  const cats = [];
+  const cats =
+    CATEGORIES.map(cat => {
 
-  CATEGORIES.forEach(cat => {
+      const categoryTotal =
+        categoryTotals[cat.id] || 0;
 
-    const categoryTotal =
-      categoryTotals[cat.id];
-
-    if (
-      categoryTotal > 0
-    ) {
-
-      cats.push({
+      return {
 
         ...cat,
 
@@ -4019,17 +4019,17 @@ function renderSelectedDay() {
           categoryTotal,
 
         pct:
-          Math.round(
-            categoryTotal /
-            total *
-            100
-          )
+          total > 0
+            ? Math.round(
+                categoryTotal /
+                total *
+                100
+              )
+            : 0
 
-      });
+      };
 
-    }
-
-  });
+    });
 
   /*
    * Add untracked.

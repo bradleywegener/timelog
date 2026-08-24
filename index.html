@@ -213,7 +213,7 @@
 
     <button
       class="menu-item menu-item-button"
-      onclick="openCategoryEditor()"
+      onclick="openCategoryEditor('add')"
     >
 
       <div class="menu-item-icon">
@@ -224,9 +224,35 @@
       </div>
 
       <div class="menu-item-text">
-        <div class="menu-item-title">Category manager</div>
+        <div class="menu-item-title">Add category</div>
         <div class="menu-item-subtitle">
-          Manage activity types
+          Create a new activity type
+        </div>
+      </div>
+
+      <div class="menu-item-chevron">
+        ›
+      </div>
+
+    </button>
+
+    <button
+      class="menu-item menu-item-button"
+      onclick="openCategoryEditor('manage')"
+    >
+
+      <div class="menu-item-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 6h18"></path>
+          <path d="M7 12h10"></path>
+          <path d="M10 18h4"></path>
+        </svg>
+      </div>
+
+      <div class="menu-item-text">
+        <div class="menu-item-title">Manage categories</div>
+        <div class="menu-item-subtitle">
+          Edit or delete activity types
         </div>
       </div>
 
@@ -720,47 +746,56 @@
     class="edit-modal-title"
     id="category-modal-title"
   >
-    category manager
+    Manage categories
   </div>
 
   <div
-    class="category-list"
-    id="category-list"
-  ></div>
-
-  <div class="field-label">
-    category name
+    id="category-manage-view"
+  >
+    <div
+      class="category-list"
+      id="category-list"
+    ></div>
   </div>
 
-  <input
-    type="text"
-    id="category-name"
-    placeholder="e.g. Exercise"
-    autocomplete="off"
+  <div
+    id="category-add-view"
+    hidden
   >
+    <div class="field-label">
+      category name
+    </div>
 
-  <div class="field-label category-field-label">
-    emoji
+    <input
+      type="text"
+      id="category-name"
+      placeholder="e.g. Exercise"
+      autocomplete="off"
+    >
+
+    <div class="field-label category-field-label">
+      emoji
+    </div>
+
+    <input
+      type="text"
+      id="category-emoji"
+      placeholder="e.g. 💪"
+      maxlength="4"
+      autocomplete="off"
+    >
+
+    <div class="field-label category-field-label">
+      colour
+    </div>
+
+    <input
+      class="category-color"
+      type="color"
+      id="category-color"
+      value="#5FB38A"
+    >
   </div>
-
-  <input
-    type="text"
-    id="category-emoji"
-    placeholder="e.g. 💪"
-    maxlength="4"
-    autocomplete="off"
-  >
-
-  <div class="field-label category-field-label">
-    colour
-  </div>
-
-  <input
-    class="category-color"
-    type="color"
-    id="category-color"
-    value="#5FB38A"
-  >
 
   <div class="edit-modal-actions">
 
