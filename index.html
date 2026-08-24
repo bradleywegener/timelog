@@ -590,11 +590,52 @@
       split at
     </div>
 
-    <input
-      type="datetime-local"
-      id="edit-split-time"
-      step="1"
-    >
+    <div
+      class="split-time-range"
+      id="edit-split-time-range"
+    ></div>
+
+    <div class="split-time-entry">
+
+      <input
+        type="text"
+        id="edit-split-time"
+        inputmode="numeric"
+        placeholder="hh:mm"
+        maxlength="5"
+        autocomplete="off"
+        aria-label="Split time"
+      >
+
+      <div
+        class="period-toggle"
+        id="edit-split-period-toggle"
+        hidden
+      >
+
+        <label>
+          <input
+            type="radio"
+            name="edit-split-period"
+            id="edit-split-period-am"
+            value="am"
+          >
+          AM
+        </label>
+
+        <label>
+          <input
+            type="radio"
+            name="edit-split-period"
+            id="edit-split-period-pm"
+            value="pm"
+          >
+          PM
+        </label>
+
+      </div>
+
+    </div>
 
     <div class="field-label">
       second activity category

@@ -2,6 +2,18 @@
 
 All notable changes to timelog are documented here.
 
+## [0.2.7] - 2026-08-24
+
+### Added
+- Split-time entry now uses an in-app `hh:mm` field instead of the browser's date/time picker.
+- Activities that cross noon now provide mutually exclusive AM and PM options.
+
+### Changed
+- Split-time displays the original activity's start and end times and saves split times with zero seconds.
+- Edit and delete-confirmation tiles now use opaque themed backgrounds with consistently sized action buttons.
+
+---
+
 ## [0.2.6] - 2026-08-24
 
 ### Added

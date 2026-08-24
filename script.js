@@ -984,10 +984,35 @@ function openUntrackedEditor(id) {
 
   document
     .getElementById('edit-split-time')
-    .value = getMidpointDateTimeValue(
+    .value = getSplitTimeValue(
       entry.start,
       entry.end
     );
+
+  document
+    .getElementById('edit-split-period-am')
+    .checked = !getSplitPeriod(
+        entry.start,
+        entry.end
+      );
+
+  document
+    .getElementById('edit-split-period-pm')
+    .checked = getSplitPeriod(
+      entry.start,
+      entry.end
+    );
+
+  document
+    .getElementById('edit-split-period-toggle')
+    .hidden = !needsSplitPeriod(
+      entry.start,
+      entry.end
+    );
+
+  document
+    .getElementById('edit-split-time-range')
+    .textContent = `${fmtTime(entry.start)} → ${fmtTime(entry.end)}`;
 
   document
     .getElementById('edit-split-label')
@@ -1005,7 +1030,7 @@ function openUntrackedEditor(id) {
 
 }
 
-function getMidpointDateTimeValue(start, end) {
+function getSplitTimeValue(start, end) {
 
   const midpoint = new Date(
     start +
@@ -1015,7 +1040,88 @@ function getMidpointDateTimeValue(start, end) {
   const pad = value =>
     String(value).padStart(2, '0');
 
-  return `${midpoint.getFullYear()}-${pad(midpoint.getMonth() + 1)}-${pad(midpoint.getDate())}T${pad(midpoint.getHours())}:${pad(midpoint.getMinutes())}:${pad(midpoint.getSeconds())}`;
+  const hours = midpoint.getHours() % 12 || 12;
+
+  return `${pad(hours)}:${pad(midpoint.getMinutes())}`;
+
+}
+
+function needsSplitPeriod(start, end) {
+
+  const startDate = new Date(start);
+
+  const noon = new Date(
+    startDate.getFullYear(),
+    startDate.getMonth(),
+    startDate.getDate(),
+    12, 0, 0, 0
+  ).getTime();
+
+  return start < noon && end > noon;
+
+}
+
+function getSplitPeriod(start, end) {
+
+  const midpoint =
+    start + Math.floor((end - start) / 2);
+
+  return new Date(midpoint).getHours() >= 12;
+
+}
+
+function getSplitTimestamp(entry, value, isPM) {
+
+  const match = value.trim().match(
+    /^(\d{1,2}):(\d{2})$/
+  );
+
+  if (!match) {
+    return NaN;
+  }
+
+  let hours = Number(match[1]);
+  const minutes = Number(match[2]);
+
+  if (
+    hours < 1 ||
+    hours > 12 ||
+    minutes > 59
+  ) {
+    return NaN;
+  }
+
+  if (needsSplitPeriod(entry.start, entry.end)) {
+    if (isPM && hours < 12) {
+      hours += 12;
+    }
+
+    if (!isPM && hours === 12) {
+      hours = 0;
+    }
+  } else {
+    const startHour =
+      new Date(entry.start).getHours();
+
+    if (startHour >= 12 && hours < 12) {
+      hours += 12;
+    }
+
+    if (startHour < 12 && hours === 12) {
+      hours = 0;
+    }
+  }
+
+  const date = new Date(entry.start);
+
+  date.setHours(
+    hours,
+    minutes,
+    0,
+    0
+  );
+
+  return date.getTime();
 
 }
 
@@ -1231,11 +1337,15 @@ function saveUntrackedClassification() {
 
   if (!splitFields.hidden) {
 
-    const splitTime = new Date(
+    const splitTime = getSplitTimestamp(
+      entry,
       document
         .getElementById('edit-split-time')
-        .value
-    ).getTime();
+        .value,
+      document
+        .getElementById('edit-split-period-pm')
+        .checked
+    );
 
     if (
       !Number.isFinite(splitTime)

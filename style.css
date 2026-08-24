@@ -2136,7 +2136,7 @@ MOBILE
   border-radius: 24px;
 
   background:
-    var(--card);
+    var(--surface-raised);
 
   border:
     1px solid var(--border);
@@ -2209,8 +2209,64 @@ MOBILE
   margin-top: 20px;
 }
 
-.split-fields input[type="datetime-local"] {
-  color-scheme: inherit;
+.split-time-range {
+  margin-bottom: 10px;
+
+  color: var(--muted);
+
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+}
+
+.split-time-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.split-time-entry input[type="text"] {
+  width: 120px;
+}
+
+.period-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  gap: 6px;
+}
+
+.period-toggle label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 7px 10px;
+
+  border: 1px solid var(--border);
+  border-radius: 8px;
+
+  background: var(--surface);
+  color: var(--text-secondary);
+
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.period-toggle label:has(input:checked) {
+  border-color: var(--accent);
+  background: color-mix(
+    in srgb,
+    var(--accent) 18%,
+    var(--surface)
+  );
+  color: var(--text);
+}
+
+.period-toggle input {
+  accent-color: var(--accent);
 }
 
 .edit-modal-actions {
@@ -2222,6 +2278,13 @@ MOBILE
 
 .edit-modal-actions .btn {
   flex: 1;
+
+  width: 0;
+  height: 48px;
+  min-height: 48px;
+
+  margin-top: 0;
+  padding: 0;
 }
 
 .message-modal-backdrop {
@@ -2266,7 +2329,7 @@ MOBILE
 
   border-radius: 24px;
 
-  background: var(--card);
+  background: var(--surface-raised);
   border: 1px solid var(--border);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
 
