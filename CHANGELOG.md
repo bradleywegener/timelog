@@ -2,6 +2,18 @@
 
 All notable changes to timelog are documented here.
 
+## [0.3.2] - 2026-08-25
+
+### Changed
+- Adjacent log entries with the same category and name now automatically merge into one entry.
+- Untracked periods that touch or match adjacent untracked periods are merged automatically.
+- This also applies when entries are recreated or renamed to match an adjacent activity.
+
+### Fixed
+- Prevented duplicated adjacent activities from persisting in the log after saves and reloads.
+
+---
+
 ## [0.3.1] - 2026-08-25
 
 ### Changed

@@ -66,8 +66,15 @@ let CATEGORIES = [
    STATE
    ================================================== */
 
-let entries = JSON.parse(
-  localStorage.getItem('timelog-entries') || '[]'
+let entries = mergeAdjacentMatchingEntries(
+  JSON.parse(
+    localStorage.getItem('timelog-entries') || '[]'
+  )
+    .map(entry => ({
+      ...entry,
+      category: entry.category ?? null,
+      label: entry.label ?? ''
+    }))
 );
 
 let active = JSON.parse(
@@ -92,8 +99,15 @@ let insightDate = new Date();
 
 const UNTRACKED_GRACE_MS = 15 * 60 * 1000;
 
-let untrackedEntries = JSON.parse(
-  localStorage.getItem('timelog-untracked') || '[]'
+let untrackedEntries = mergeAdjacentMatchingEntries(
+  JSON.parse(
+    localStorage.getItem('timelog-untracked') || '[]'
+  )
+    .map(entry => ({
+      ...entry,
+      category: null,
+      label: entry.label ?? null
+    }))
 );
 
 let untrackedActive = JSON.parse(
@@ -741,7 +755,90 @@ function todayStr() {
 }
 
 
+function mergeAdjacentMatchingEntries(items) {
+
+  const sorted =
+    [...items].sort(
+      (a, b) =>
+        a.start - b.start ||
+        a.end - b.end
+    );
+
+  const merged = [];
+
+  sorted.forEach(item => {
+
+    const previous =
+      merged[merged.length - 1];
+
+    const type =
+      item.category === null
+        ? 'untracked'
+        : 'tracked';
+
+    const identity = {
+      type,
+      category:
+        item.category ?? null,
+      label:
+        item.label ?? ''
+    };
+
+    const previousIdentity =
+      previous && {
+        type:
+          previous.category === null
+            ? 'untracked'
+            : 'tracked',
+        category:
+          previous.category ?? null,
+        label:
+          previous.label ?? ''
+      };
+
+    if (
+      previous &&
+      previousIdentity.type === identity.type &&
+      previousIdentity.category === identity.category &&
+      previousIdentity.label === identity.label &&
+      item.start <= previous.end
+    ) {
+
+      previous.end =
+        Math.max(
+          previous.end,
+          item.end
+        );
+
+      previous.duration =
+        previous.end -
+        previous.start;
+
+      return;
+
+    }
+
+    merged.push({
+      ...item,
+      type
+    });
+
+  });
+
+  return merged;
+
+}
+
 function saveEntries() {
+
+  entries =
+    mergeAdjacentMatchingEntries(
+      entries.map(item => ({
+        ...item,
+        category:
+          item.category ?? null
+      }))
+    );
 
   localStorage.setItem(
     'timelog-entries',
@@ -751,6 +848,16 @@ function saveEntries() {
 }
 
 function saveUntrackedEntries() {
+
+  untrackedEntries =
+    mergeAdjacentMatchingEntries(
+      untrackedEntries.map(item => ({
+        ...item,
+        category: null,
+        label: item.label ?? null
+      }))
+    );
+
   localStorage.setItem(
     'timelog-untracked',
     JSON.stringify(untrackedEntries)
@@ -3351,6 +3458,11 @@ function renderLog() {
     .forEach(
       ([date, dayEntries]) => {
 
+        const mergedDayEntries =
+          mergeAdjacentMatchingEntries(
+            dayEntries
+          );
+
         /*
          * Calculate tracked time only.
          *
@@ -3358,7 +3470,7 @@ function renderLog() {
          * from the day total.
          */
         const trackedTotal =
-          dayEntries
+          mergedDayEntries
             .filter(
               entry =>
                 entry.type ===
@@ -3415,7 +3527,7 @@ function renderLog() {
         card.className =
           'card log-card';
 
-        dayEntries.forEach(
+        mergedDayEntries.forEach(
           entry => {
 
             const isUntracked =
