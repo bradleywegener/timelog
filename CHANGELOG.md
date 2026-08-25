@@ -2,6 +2,15 @@
 
 All notable changes to timelog are documented here.
 
+## [0.3.4] - 2026-08-26
+
+### Fixed
+- Restored edit controls for untracked activities that begin at midnight.
+- Restored delete controls for tracked activities that begin at midnight.
+- Fixed controls for records whose IDs are strings after midnight splitting.
+
+---
+
 ## [0.3.3] - 2026-08-26
 
 ### Added

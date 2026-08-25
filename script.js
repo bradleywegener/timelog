@@ -944,6 +944,14 @@ function splitEntriesAtMidnight(items) {
 
 }
 
+function hasStoredUntrackedEntry(id) {
+
+  return untrackedEntries.some(
+    entry => entry.id === id
+  );
+
+}
+
 function saveEntries() {
 
   entries =
@@ -3788,13 +3796,13 @@ function renderLog() {
                 isUntracked
 
                   ? (
-                      typeof entry.id === 'number'
+                      hasStoredUntrackedEntry(entry.id)
                         ? `
                     <button
                       class="btn-edit"
                       onclick="
                         openUntrackedEditor(
-                          ${entry.id}
+                          ${JSON.stringify(entry.id)}
                         )
                       "
                       aria-label="
@@ -3807,14 +3815,18 @@ function renderLog() {
                       : ''
                   )
 
-                  : entry.current
+                  : entry.current ||
+                    !entries.some(
+                      storedEntry =>
+                        storedEntry.id === entry.id
+                    )
                     ? ''
                     : `
                     <button
                       class="btn-del"
                       onclick="
                         deleteEntry(
-                          ${entry.id}
+                          ${JSON.stringify(entry.id)}
                         )
                       "
                       aria-label="
