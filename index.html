@@ -183,6 +183,37 @@
     </div>
 
 
+    <div class="menu-item">
+
+      <div class="menu-item-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="8"></circle>
+          <path d="M12 7v5l3 2"></path>
+        </svg>
+      </div>
+
+      <div class="menu-item-text">
+        <div class="menu-item-title">Time format</div>
+        <div
+          class="menu-item-subtitle"
+          id="time-format-label"
+        >
+          12-hour
+        </div>
+      </div>
+
+      <button
+        class="menu-switch"
+        id="time-format-menu-toggle"
+        onclick="toggleTimeFormat()"
+        aria-label="Toggle 12-hour and 24-hour time"
+      >
+        <span></span>
+      </button>
+
+    </div>
+
+
     <button
       class="menu-item menu-item-button"
       disabled

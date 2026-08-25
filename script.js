@@ -67,8 +67,10 @@ let CATEGORIES = [
    ================================================== */
 
 let entries = mergeAdjacentMatchingEntries(
-  JSON.parse(
-    localStorage.getItem('timelog-entries') || '[]'
+  splitEntriesAtMidnight(
+    JSON.parse(
+      localStorage.getItem('timelog-entries') || '[]'
+    )
   )
     .map(entry => ({
       ...entry,
@@ -97,11 +99,18 @@ let timerInterval = null;
 
 let insightDate = new Date();
 
+let timeFormat =
+  localStorage.getItem('timelog-time-format') === '24'
+    ? '24'
+    : '12';
+
 const UNTRACKED_GRACE_MS = 15 * 60 * 1000;
 
 let untrackedEntries = mergeAdjacentMatchingEntries(
-  JSON.parse(
-    localStorage.getItem('timelog-untracked') || '[]'
+  splitEntriesAtMidnight(
+    JSON.parse(
+      localStorage.getItem('timelog-untracked') || '[]'
+    )
   )
     .map(entry => ({
       ...entry,
@@ -217,6 +226,41 @@ function toggleTheme() {
       : 'dark';
 
   applyTheme(newTheme);
+
+}
+
+function applyTimeFormat(format) {
+
+  timeFormat = format === '24' ? '24' : '12';
+
+  localStorage.setItem(
+    'timelog-time-format',
+    timeFormat
+  );
+
+  const label = document.getElementById('time-format-label');
+  const toggle = document.getElementById('time-format-menu-toggle');
+
+  if (label) {
+    label.textContent =
+      timeFormat === '24' ? '24-hour' : '12-hour';
+  }
+
+  if (toggle) {
+    toggle.classList.toggle('active', timeFormat === '24');
+    toggle.setAttribute('aria-pressed', timeFormat === '24');
+  }
+
+  updateSplitTimeInput();
+  renderAll();
+
+}
+
+function toggleTimeFormat() {
+
+  applyTimeFormat(
+    timeFormat === '24' ? '12' : '24'
+  );
 
 }
 
@@ -725,13 +769,19 @@ function fmtDur(ms) {
 
 function fmtTime(ts) {
 
-  return new Date(ts).toLocaleTimeString(
-    [],
-    {
-      hour: '2-digit',
-      minute: '2-digit'
-    }
-  );
+  const date = new Date(ts);
+  const pad = value => String(value).padStart(2, '0');
+  const minutes = pad(date.getMinutes());
+
+  if (timeFormat === '24') {
+    return `${pad(date.getHours())}:${minutes}`;
+  }
+
+  const hours = date.getHours();
+  const displayHours = hours % 12 || 12;
+  const period = hours >= 12 ? 'PM' : 'AM';
+
+  return `${pad(displayHours)}:${minutes} ${period}`;
 }
 
 
@@ -801,7 +851,8 @@ function mergeAdjacentMatchingEntries(items) {
       previousIdentity.type === identity.type &&
       previousIdentity.category === identity.category &&
       previousIdentity.label === identity.label &&
-      item.start <= previous.end
+      item.start <= previous.end &&
+      isSameCalendarDay(previous.start, item.end)
     ) {
 
       previous.end =
@@ -829,15 +880,81 @@ function mergeAdjacentMatchingEntries(items) {
 
 }
 
+function isMidnightBoundary(firstEnd, secondStart) {
+
+  if (firstEnd !== secondStart) {
+    return false;
+  }
+
+  const boundary = new Date(firstEnd);
+
+  return boundary.getHours() === 0 &&
+    boundary.getMinutes() === 0 &&
+    boundary.getSeconds() === 0 &&
+    boundary.getMilliseconds() === 0;
+
+}
+
+function isSameCalendarDay(firstTimestamp, secondTimestamp) {
+
+  const first = new Date(firstTimestamp);
+  const second = new Date(secondTimestamp);
+
+  return first.getFullYear() === second.getFullYear() &&
+    first.getMonth() === second.getMonth() &&
+    first.getDate() === second.getDate();
+
+}
+
+function splitEntryAtMidnight(entry) {
+
+  const parts = [];
+  let start = entry.start;
+
+  while (start < entry.end) {
+
+    const startDate = new Date(start);
+    const nextMidnight = new Date(
+      startDate.getFullYear(),
+      startDate.getMonth(),
+      startDate.getDate() + 1,
+      0, 0, 0, 0
+    ).getTime();
+    const end = Math.min(entry.end, nextMidnight);
+
+    parts.push({
+      ...entry,
+      id: parts.length ? `${entry.id}-${start}` : entry.id,
+      start,
+      end,
+      duration: end - start
+    });
+
+    start = end;
+
+  }
+
+  return parts;
+
+}
+
+function splitEntriesAtMidnight(items) {
+
+  return items.flatMap(splitEntryAtMidnight);
+
+}
+
 function saveEntries() {
 
   entries =
-    mergeAdjacentMatchingEntries(
-      entries.map(item => ({
+    splitEntriesAtMidnight(
+      mergeAdjacentMatchingEntries(
+        entries.map(item => ({
         ...item,
         category:
           item.category ?? null
-      }))
+        }))
+      )
     );
 
   localStorage.setItem(
@@ -850,12 +967,14 @@ function saveEntries() {
 function saveUntrackedEntries() {
 
   untrackedEntries =
-    mergeAdjacentMatchingEntries(
-      untrackedEntries.map(item => ({
+    splitEntriesAtMidnight(
+      mergeAdjacentMatchingEntries(
+        untrackedEntries.map(item => ({
         ...item,
         category: null,
         label: item.label ?? null
-      }))
+        }))
+      )
     );
 
   localStorage.setItem(
@@ -1500,10 +1619,7 @@ function openUntrackedEditor(id) {
 
   document
     .getElementById('edit-split-period-toggle')
-    .hidden = !needsSplitPeriod(
-      entry.start,
-      entry.end
-    );
+    .hidden = timeFormat === '24';
 
   document
     .getElementById('edit-split-time-range')
@@ -1512,6 +1628,8 @@ function openUntrackedEditor(id) {
   document
     .getElementById('edit-split-label')
     .value = '';
+
+  updateSplitTimeInput();
 
   buildEditCatPills();
 
@@ -1525,6 +1643,52 @@ function openUntrackedEditor(id) {
 
 }
 
+function updateSplitTimeInput() {
+
+  const input = document.getElementById('edit-split-time');
+  const periodToggle = document.getElementById('edit-split-period-toggle');
+
+  if (!input || !periodToggle) {
+    return;
+  }
+
+  input.placeholder =
+    timeFormat === '24' ? 'HH:MM' : 'hh:mm';
+
+  periodToggle.hidden = timeFormat === '24';
+
+  if (!editingUntrackedId) {
+    return;
+  }
+
+  const entry = untrackedEntries.find(
+    item => item.id === editingUntrackedId
+  );
+
+  if (!entry) {
+    return;
+  }
+
+  document
+    .getElementById('edit-modal-time')
+    .textContent = `${fmtTime(entry.start)} → ${fmtTime(entry.end)} · ${fmtDur(entry.duration)}`;
+
+  document
+    .getElementById('edit-split-time-range')
+    .textContent = `${fmtTime(entry.start)} → ${fmtTime(entry.end)}`;
+
+  input.value = getSplitTimeValue(entry.start, entry.end);
+
+  document
+    .getElementById('edit-split-period-am')
+    .checked = !getSplitPeriod(entry.start, entry.end);
+
+  document
+    .getElementById('edit-split-period-pm')
+    .checked = getSplitPeriod(entry.start, entry.end);
+
+}
+
 function getSplitTimeValue(start, end) {
 
   const midpoint = new Date(
@@ -1535,7 +1699,9 @@ function getSplitTimeValue(start, end) {
   const pad = value =>
     String(value).padStart(2, '0');
 
-  const hours = midpoint.getHours() % 12 || 12;
+  const hours = timeFormat === '24'
+    ? midpoint.getHours()
+    : midpoint.getHours() % 12 || 12;
 
   return `${pad(hours)}:${pad(midpoint.getMinutes())}`;
 
@@ -1578,15 +1744,22 @@ function getSplitTimestamp(entry, value, isPM) {
   let hours = Number(match[1]);
   const minutes = Number(match[2]);
 
-  if (
-    hours < 1 ||
-    hours > 12 ||
-    minutes > 59
-  ) {
+  if (minutes > 59) {
     return NaN;
   }
 
-  if (needsSplitPeriod(entry.start, entry.end)) {
+  if (timeFormat === '24') {
+
+    if (hours < 0 || hours > 23) {
+      return NaN;
+    }
+
+  } else {
+
+    if (hours < 1 || hours > 12) {
+      return NaN;
+    }
+
     if (isPM && hours < 12) {
       hours += 12;
     }
@@ -1594,17 +1767,7 @@ function getSplitTimestamp(entry, value, isPM) {
     if (!isPM && hours === 12) {
       hours = 0;
     }
-  } else {
-    const startHour =
-      new Date(entry.start).getHours();
 
-    if (startHour >= 12 && hours < 12) {
-      hours += 12;
-    }
-
-    if (startHour < 12 && hours === 12) {
-      hours = 0;
-    }
   }
 
   const date = new Date(entry.start);
@@ -2376,7 +2539,8 @@ function cleanOverlappingUntrackedEntries() {
      * the previous entry, merge them.
      */
     if (
-      entry.start <= previous.end
+      entry.start <= previous.end &&
+      isSameCalendarDay(previous.start, entry.end)
     ) {
 
       previous.end =
@@ -3461,6 +3625,10 @@ function renderLog() {
         const mergedDayEntries =
           mergeAdjacentMatchingEntries(
             dayEntries
+          ).sort(
+            (a, b) =>
+              b.start -
+              a.start
           );
 
         /*
@@ -5106,7 +5274,7 @@ fillPastGapsWithUntracked();
 
 cleanOverlappingUntrackedEntries();
 
-renderAll();
+applyTimeFormat(timeFormat);
 
 loadVersion();
 
