@@ -2,6 +2,21 @@
 
 All notable changes to timelog are documented here.
 
+## [0.3.3] - 2026-08-26
+
+### Added
+- Added a menu toggle for 12-hour and 24-hour time formats.
+- Split-time input now follows the selected time format.
+
+### Changed
+- Log activities are ordered from most recent to oldest.
+- Activities are split at local midnight and never displayed across two calendar days.
+
+### Fixed
+- Prevented adjacent matching activities from merging across a midnight boundary.
+
+---
+
 ## [0.3.2] - 2026-08-25
 
 ### Changed

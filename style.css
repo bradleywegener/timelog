@@ -588,6 +588,22 @@ html[data-theme="light"] .menu-switch span {
   transform: translateX(17px);
 }
 
+.menu-switch.active {
+  background: var(--accent);
+}
+
+.menu-switch.active span {
+  transform: translateX(17px);
+}
+
+html[data-theme="light"] #time-format-menu-toggle:not(.active) {
+  background: var(--border-light);
+}
+
+html[data-theme="light"] #time-format-menu-toggle:not(.active) span {
+  transform: none;
+}
+
 
 /* ==================================================
    THEME ICONS
