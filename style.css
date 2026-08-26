@@ -2256,7 +2256,14 @@ MOBILE
 }
 
 .split-time-entry input[type="text"] {
-  width: 120px;
+  width: 52px;
+  text-align: center;
+}
+
+.split-time-separator {
+  color: var(--text-secondary);
+  font-size: 18px;
+  font-weight: 700;
 }
 
 .period-toggle {
@@ -2265,6 +2272,10 @@ MOBILE
   gap: 7px;
 
   gap: 6px;
+}
+
+.period-toggle[hidden] {
+  display: none;
 }
 
 .period-toggle label {

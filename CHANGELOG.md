@@ -2,6 +2,16 @@
 
 All notable changes to timelog are documented here.
 
+## [0.3.5] - 2026-08-26
+
+### Changed
+- Split activity time entry now uses separate hour and minute fields with a colon between them.
+
+### Fixed
+- AM/PM controls are now hidden in 24-hour mode and remain available in 12-hour mode.
+
+---
+
 ## [0.3.4] - 2026-08-26
 
 ### Fixed

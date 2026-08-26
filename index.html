@@ -681,12 +681,24 @@
 
       <input
         type="text"
-        id="edit-split-time"
+        id="edit-split-hour"
         inputmode="numeric"
-        placeholder="hh:mm"
-        maxlength="5"
+        placeholder="hh"
+        maxlength="2"
         autocomplete="off"
-        aria-label="Split time"
+        aria-label="Split hour"
+      >
+
+      <span class="split-time-separator">:</span>
+
+      <input
+        type="text"
+        id="edit-split-minute"
+        inputmode="numeric"
+        placeholder="mm"
+        maxlength="2"
+        autocomplete="off"
+        aria-label="Split minute"
       >
 
       <div
