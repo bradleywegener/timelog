@@ -1604,12 +1604,7 @@ function openUntrackedEditor(id) {
     .getElementById('edit-save-button')
     .textContent = 'Save';
 
-  document
-    .getElementById('edit-split-time')
-    .value = getSplitTimeValue(
-      entry.start,
-      entry.end
-    );
+  setSplitTimeInputs(entry.start, entry.end);
 
   document
     .getElementById('edit-split-period-am')
@@ -1653,15 +1648,18 @@ function openUntrackedEditor(id) {
 
 function updateSplitTimeInput() {
 
-  const input = document.getElementById('edit-split-time');
+  const hourInput = document.getElementById('edit-split-hour');
+  const minuteInput = document.getElementById('edit-split-minute');
   const periodToggle = document.getElementById('edit-split-period-toggle');
 
-  if (!input || !periodToggle) {
+  if (!hourInput || !minuteInput || !periodToggle) {
     return;
   }
 
-  input.placeholder =
-    timeFormat === '24' ? 'HH:MM' : 'hh:mm';
+  hourInput.placeholder =
+    timeFormat === '24' ? 'HH' : 'hh';
+
+  minuteInput.placeholder = 'mm';
 
   periodToggle.hidden = timeFormat === '24';
 
@@ -1685,7 +1683,7 @@ function updateSplitTimeInput() {
     .getElementById('edit-split-time-range')
     .textContent = `${fmtTime(entry.start)} → ${fmtTime(entry.end)}`;
 
-  input.value = getSplitTimeValue(entry.start, entry.end);
+  setSplitTimeInputs(entry.start, entry.end);
 
   document
     .getElementById('edit-split-period-am')
@@ -1694,6 +1692,21 @@ function updateSplitTimeInput() {
   document
     .getElementById('edit-split-period-pm')
     .checked = getSplitPeriod(entry.start, entry.end);
+
+}
+
+function setSplitTimeInputs(start, end) {
+
+  const value = getSplitTimeValue(start, end);
+  const [hours, minutes] = value.split(':');
+
+  document
+    .getElementById('edit-split-hour')
+    .value = hours;
+
+  document
+    .getElementById('edit-split-minute')
+    .value = minutes;
 
 }
 
@@ -1739,18 +1752,17 @@ function getSplitPeriod(start, end) {
 
 }
 
-function getSplitTimestamp(entry, value, isPM) {
+function getSplitTimestamp(entry, hourValue, minuteValue, isPM) {
 
-  const match = value.trim().match(
-    /^(\d{1,2}):(\d{2})$/
-  );
+  const hourMatch = hourValue.trim().match(/^\d{1,2}$/);
+  const minuteMatch = minuteValue.trim().match(/^\d{1,2}$/);
 
-  if (!match) {
+  if (!hourMatch || !minuteMatch) {
     return NaN;
   }
 
-  let hours = Number(match[1]);
-  const minutes = Number(match[2]);
+  let hours = Number(hourMatch[0]);
+  const minutes = Number(minuteMatch[0]);
 
   if (minutes > 59) {
     return NaN;
@@ -2006,7 +2018,10 @@ function saveUntrackedClassification() {
     const splitTime = getSplitTimestamp(
       entry,
       document
-        .getElementById('edit-split-time')
+        .getElementById('edit-split-hour')
+        .value,
+      document
+        .getElementById('edit-split-minute')
         .value,
       document
         .getElementById('edit-split-period-pm')
@@ -3802,7 +3817,7 @@ function renderLog() {
                       class="btn-edit"
                       onclick="
                         openUntrackedEditor(
-                          ${JSON.stringify(entry.id)}
+                          ${JSON.stringify(entry.id).replaceAll('"', '&quot;')}
                         )
                       "
                       aria-label="
@@ -3826,7 +3841,7 @@ function renderLog() {
                       class="btn-del"
                       onclick="
                         deleteEntry(
-                          ${JSON.stringify(entry.id)}
+                          ${JSON.stringify(entry.id).replaceAll('"', '&quot;')}
                         )
                       "
                       aria-label="
