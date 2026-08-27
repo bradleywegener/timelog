@@ -187,14 +187,38 @@ function migrateLegacyEntriesToCurrentCategories() {
    THEME
    ================================================== */
 
-function applyTheme(theme) {
+const THEME_MODES = ['light', 'dark', 'system'];
+
+const systemThemeQuery =
+  window.matchMedia
+    ? window.matchMedia('(prefers-color-scheme: dark)')
+    : null;
+
+function resolveTheme(mode) {
+
+  if (mode === 'system') {
+
+    return systemThemeQuery && systemThemeQuery.matches
+      ? 'dark'
+      : 'light';
+
+  }
+
+  return mode;
+
+}
+
+
+function applyTheme(mode) {
+
+  const resolved = resolveTheme(mode);
 
   document.documentElement.dataset.theme =
-    theme;
+    resolved;
 
   localStorage.setItem(
     'timelog-theme',
-    theme
+    mode
   );
 
   const themeLabel =
@@ -205,9 +229,23 @@ function applyTheme(theme) {
   if (themeLabel) {
 
     themeLabel.textContent =
-      theme === 'dark'
-        ? 'Dark mode'
-        : 'Light mode';
+      mode === 'system'
+        ? `System (${resolved === 'dark' ? 'Dark' : 'Light'})`
+        : resolved === 'dark'
+          ? 'Dark mode'
+          : 'Light mode';
+
+  }
+
+  const themeToggle =
+    document.getElementById(
+      'theme-menu-toggle'
+    );
+
+  if (themeToggle) {
+
+    themeToggle.classList.toggle('active', mode === 'dark');
+    themeToggle.classList.toggle('system', mode === 'system');
 
   }
 
@@ -216,16 +254,19 @@ function applyTheme(theme) {
 
 function toggleTheme() {
 
-  const currentTheme =
-    document.documentElement.dataset.theme
+  const currentMode =
+    localStorage.getItem('timelog-theme')
     || 'dark';
 
-  const newTheme =
-    currentTheme === 'dark'
-      ? 'light'
-      : 'dark';
+  const currentIndex =
+    THEME_MODES.indexOf(currentMode);
 
-  applyTheme(newTheme);
+  const newMode =
+    THEME_MODES[
+      (currentIndex + 1) % THEME_MODES.length
+    ];
+
+  applyTheme(newMode);
 
 }
 
@@ -272,27 +313,80 @@ function initialiseTheme() {
       'timelog-theme'
     );
 
-  if (
-    savedTheme === 'light'
-    || savedTheme === 'dark'
-  ) {
+  if (THEME_MODES.includes(savedTheme)) {
 
     applyTheme(savedTheme);
 
-    return;
+  } else {
+
+    /* Default to dark mode */
+
+    applyTheme('dark');
 
   }
 
+  if (systemThemeQuery) {
 
-  /* Default to dark mode */
+    systemThemeQuery.addEventListener('change', () => {
 
-  applyTheme('dark');
+      if (localStorage.getItem('timelog-theme') === 'system') {
+
+        applyTheme('system');
+
+      }
+
+    });
+
+  }
 
 }
 
 /* ==================================================
    MENU
    ================================================== */
+
+function updateHeaderHeight() {
+
+  const header = document.querySelector('header');
+  const menuToggle = document.getElementById('menu-toggle');
+
+  if (!header) return;
+
+  /* Menu/backdrop are viewport-fixed, so the measured bottom already includes the safe-area inset */
+  document.documentElement.style.setProperty(
+    '--header-height',
+    `${header.getBoundingClientRect().bottom}px`
+  );
+
+  if (menuToggle) {
+
+    /* Keep the menu's right edge aligned with the hamburger button's right edge */
+    const edgeGap =
+      window.innerWidth
+      - menuToggle.getBoundingClientRect().right;
+
+    document.documentElement.style.setProperty(
+      '--menu-edge-gap',
+      `${edgeGap}px`
+    );
+
+  }
+
+}
+
+if (window.ResizeObserver) {
+
+  const header = document.querySelector('header');
+
+  if (header) {
+    new ResizeObserver(updateHeaderHeight).observe(header);
+  }
+
+}
+
+window.addEventListener('resize', updateHeaderHeight);
+
+updateHeaderHeight();
 
 function toggleMenu() {
 
@@ -764,6 +858,32 @@ function fmtDur(ms) {
   }
 
   return `${sec}s`;
+}
+
+
+/*
+ * Header timer: on narrow screens seconds are dropped once
+ * an hour is reached, keeping the box's width constant.
+ */
+function fmtHeaderTimer(ms) {
+
+  const isNarrow =
+    window.matchMedia('(max-width: 480px)').matches;
+
+  const s = Math.floor(ms / 1000);
+
+  const h = Math.floor(s / 3600);
+
+  const m = Math.floor((s % 3600) / 60);
+
+  const sec = s % 60;
+
+  if (isNarrow && h > 0) {
+    return `${h}h ${m}m`;
+  }
+
+  return fmtDur(ms);
+
 }
 
 
@@ -3305,7 +3425,7 @@ function renderHeaderActivity() {
     meta.textContent = '';
 
     timer.textContent =
-      fmtDur(
+      fmtHeaderTimer(
         Date.now() -
         active.start
       );
@@ -3342,7 +3462,7 @@ function renderHeaderActivity() {
       '';
 
     timer.textContent =
-      fmtDur(
+      fmtHeaderTimer(
         Date.now() -
         untrackedActive.start
       );

@@ -148,6 +148,13 @@ header {
 }
 
 
+.header-brand {
+  min-width: 0;
+
+  flex-shrink: 1;
+}
+
+
 .logo {
   font-family:
     'DM Sans',
@@ -162,6 +169,8 @@ header {
   line-height: 1.1;
 
   color: var(--text);
+
+  white-space: nowrap;
 }
 
 
@@ -206,6 +215,8 @@ HEADER ACTIONS
 .header-actions {
   display: flex;
   align-items: center;
+
+  flex-shrink: 0;
 }
 
 /* ==================================================
@@ -217,6 +228,8 @@ HEADER RIGHT
   align-items: center;
   gap: 10px;
   margin-left: auto;
+
+  flex-shrink: 0;
 }
 
 
@@ -305,10 +318,7 @@ HEADER RIGHT
   right: 0;
   bottom: 0;
 
-  top: calc(
-    62px +
-    env(safe-area-inset-top)
-  );
+  top: var(--header-height, 62px);
 
   background: rgba(0, 0, 0, 0.18);
 
@@ -339,11 +349,11 @@ HEADER RIGHT
   position: fixed;
 
   top: calc(
-    62px +
-    env(safe-area-inset-top)
+    var(--header-height, 62px) +
+    var(--menu-edge-gap, 16px)
   );
 
-  right: 16px;
+  right: var(--menu-edge-gap, 16px);
 
   width: min(
     290px,
@@ -580,11 +590,11 @@ HEADER RIGHT
     transform 0.2s ease;
 }
 
-html[data-theme="light"] .menu-switch {
+html[data-theme="light"] .menu-switch:not(#theme-menu-toggle) {
   background: var(--accent);
 }
 
-html[data-theme="light"] .menu-switch span {
+html[data-theme="light"] .menu-switch:not(#theme-menu-toggle) span {
   transform: translateX(17px);
 }
 
@@ -594,6 +604,12 @@ html[data-theme="light"] .menu-switch span {
 
 .menu-switch.active span {
   transform: translateX(17px);
+}
+
+.menu-switch.system span {
+  transform: translateX(8px);
+
+  background: var(--accent);
 }
 
 html[data-theme="light"] #time-format-menu-toggle:not(.active) {
@@ -662,20 +678,6 @@ html[data-theme="light"] .theme-icon-moon {
 
 .menu-version-number {
   font-variant-numeric: tabular-nums;
-}
-
-
-/* ==================================================
-   DESKTOP MENU POSITION
-   ================================================== */
-
-@media (min-width: 700px) {
-
-  .app-menu {
-    top: 72px;
-    right: 24px;
-  }
-
 }
 
 
@@ -2041,7 +2043,10 @@ ACTIVITY TIMER
 
   white-space: nowrap;
 
-  min-width: 40px;
+  /* Reserve space for "xxh xxm xxs" so the box never resizes */
+  width: 11ch;
+
+  flex-shrink: 0;
 
   text-align: right;
 }
@@ -2113,7 +2118,16 @@ MOBILE
   .header-activity-timer {
     font-size: 14px;
 
-    min-width: 36px;
+    /* Reserve space for "xxm xxs" / "xxh xxm" so the box never resizes */
+    width: 7ch;
+  }
+
+}
+
+@media (max-width: 360px) {
+
+  .header-activity-info {
+    max-width: 68px;
   }
 
 }

@@ -2,6 +2,19 @@
 
 All notable changes to timelog are documented here.
 
+## [0.3.6] - 2026-08-27
+
+### Added
+- Appearance setting now cycles through Light, Dark and System, with System automatically following the device's light/dark mode and updating live if it changes.
+
+### Fixed
+- The dropdown menu and its backdrop now align to the header's actual height instead of an assumed fixed height, so they no longer blur or overlap part of the header/menu button when the header grows taller (e.g. long activity names).
+- On narrow screens, the app title/subtitle now wrap onto extra lines instead of the recorded activity or menu button being squeezed or pushed off-screen; the hamburger button and current activity stay right-aligned at their normal size.
+- The dropdown menu's right edge now aligns with the hamburger button's right edge, with the gap below the header matching the gap to the screen's right edge.
+- The header timer box now has a fixed width instead of growing with the elapsed time; on mobile it reserves space for "xxm xxs" and switches to "xxh xxm" (no seconds) past one hour, while desktop always reserves space for "xxh xxm xxs".
+
+---
+
 ## [0.3.5] - 2026-08-26
 
 ### Changed
