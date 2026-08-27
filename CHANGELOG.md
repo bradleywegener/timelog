@@ -2,6 +2,13 @@
 
 All notable changes to timelog are documented here.
 
+## [0.3.8] - 2026-08-27
+
+### Added
+- Notifications toggle in the menu. When enabled and permission is granted, a system notification appears when a timer starts, showing the current activity name, category, and elapsed time — mirroring the header display. The notification updates every minute and is dismissed when the timer stops.
+
+---
+
 ## [0.3.7] - 2026-08-27
 
 ### Fixed

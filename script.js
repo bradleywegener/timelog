@@ -104,6 +104,13 @@ let timeFormat =
     ? '24'
     : '12';
 
+let notificationsEnabled =
+  localStorage.getItem('timelog-notifications') === 'on';
+
+let notificationTickCount = 0;
+
+let activeNotification = null;
+
 const UNTRACKED_GRACE_MS = 15 * 60 * 1000;
 
 let untrackedEntries = mergeAdjacentMatchingEntries(
@@ -302,6 +309,157 @@ function toggleTimeFormat() {
   applyTimeFormat(
     timeFormat === '24' ? '12' : '24'
   );
+
+}
+
+
+/* ==================================================
+   NOTIFICATIONS
+   ================================================== */
+
+function applyNotifications(enabled) {
+
+  notificationsEnabled = !!enabled;
+
+  localStorage.setItem(
+    'timelog-notifications',
+    notificationsEnabled ? 'on' : 'off'
+  );
+
+  const label =
+    document.getElementById(
+      'notifications-label'
+    );
+
+  const toggle =
+    document.getElementById(
+      'notifications-menu-toggle'
+    );
+
+  if (label) {
+    label.textContent =
+      notificationsEnabled ? 'On' : 'Off';
+  }
+
+  if (toggle) {
+    toggle.classList.toggle(
+      'active',
+      notificationsEnabled
+    );
+    toggle.setAttribute(
+      'aria-pressed',
+      notificationsEnabled
+    );
+  }
+
+  if (!notificationsEnabled) {
+    clearActiveNotification();
+  }
+
+}
+
+
+async function toggleNotifications() {
+
+  if (notificationsEnabled) {
+    applyNotifications(false);
+    return;
+  }
+
+  if (!('Notification' in window)) {
+    return;
+  }
+
+  if (Notification.permission === 'denied') {
+    return;
+  }
+
+  if (Notification.permission !== 'granted') {
+    const permission =
+      await Notification.requestPermission();
+
+    if (permission !== 'granted') {
+      return;
+    }
+  }
+
+  applyNotifications(true);
+
+  if (active) {
+    showActiveNotification();
+  }
+
+}
+
+
+function showActiveNotification() {
+
+  if (
+    !notificationsEnabled ||
+    !('Notification' in window) ||
+    Notification.permission !== 'granted' ||
+    !active
+  ) {
+    return;
+  }
+
+  const cat = getCat(active.category);
+
+  const defaultLabel = cat.label;
+
+  const hasCustomLabel =
+    active.label &&
+    active.label !== defaultLabel;
+
+  const title =
+    cat.emoji +
+    ' ' +
+    (hasCustomLabel ? active.label : cat.label);
+
+  const elapsed =
+    fmtHeaderTimer(Date.now() - active.start);
+
+  const body =
+    hasCustomLabel
+      ? cat.label + ' · ' + elapsed
+      : elapsed;
+
+  activeNotification = new Notification(title, {
+    body,
+    tag: 'timelog-active',
+    silent: true,
+    icon: './icons/icon-192.png'
+  });
+
+}
+
+
+function clearActiveNotification() {
+
+  if (activeNotification) {
+    activeNotification.close();
+    activeNotification = null;
+    return;
+  }
+
+  /*
+   * Fallback: close by tag in case the
+   * reference was lost across page loads.
+   */
+
+  if (
+    !('Notification' in window) ||
+    Notification.permission !== 'granted'
+  ) {
+    return;
+  }
+
+  const n = new Notification('', {
+    tag: 'timelog-active',
+    silent: true
+  });
+
+  n.close();
 
 }
 
@@ -2870,6 +3028,10 @@ function startTimer() {
 
   renderLog();
 
+  notificationTickCount = 0;
+
+  showActiveNotification();
+
   startTick();
 }
 
@@ -2901,6 +3063,8 @@ function stopTimer() {
   );
 
   clearInterval(timerInterval);
+
+  clearActiveNotification();
 
   document
     .getElementById('entry-label')
@@ -3089,6 +3253,17 @@ function startTick() {
      */
 
     renderHeaderActivity();
+
+    /*
+     * Update the active notification
+     * once per minute.
+     */
+
+    notificationTickCount++;
+
+    if (notificationTickCount % 60 === 0) {
+      showActiveNotification();
+    }
 
     renderLog();
 
@@ -5423,12 +5598,18 @@ cleanOverlappingUntrackedEntries();
 
 applyTimeFormat(timeFormat);
 
+applyNotifications(notificationsEnabled);
+
 loadVersion();
 
 registerServiceWorker();
 
 if (active || untrackedActive) {
   startTick();
+
+  if (active) {
+    showActiveNotification();
+  }
 }
 
 function saveCategoryOverrides() {
