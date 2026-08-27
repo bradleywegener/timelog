@@ -2,6 +2,13 @@
 
 All notable changes to timelog are documented here.
 
+## [0.3.7] - 2026-08-27
+
+### Fixed
+- Scrollbars now match the app's light/dark theme instead of rendering with the browser's default (white) styling.
+
+---
+
 ## [0.3.6] - 2026-08-27
 
 ### Added
