@@ -367,10 +367,18 @@ async function toggleNotifications() {
   }
 
   if (!('Notification' in window)) {
+    showAppMessage(
+      'Notifications are not supported in this browser.',
+      { title: 'Notifications unavailable' }
+    );
     return;
   }
 
   if (Notification.permission === 'denied') {
+    showAppMessage(
+      'Notifications have been blocked. To enable them, allow notifications for this site in your browser settings.',
+      { title: 'Notifications blocked' }
+    );
     return;
   }
 
