@@ -434,16 +434,8 @@ async function showActiveNotification() {
     ' ' +
     (hasCustomLabel ? active.label : cat.label);
 
-  const elapsed =
-    fmtHeaderTimer(Date.now() - active.start);
-
-  const body =
-    hasCustomLabel
-      ? cat.label + ' · ' + elapsed
-      : elapsed;
-
   await registration.showNotification(title, {
-    body,
+    body: 'Recording',
     tag: 'timelog-active',
     renotify: false,
     silent: true,
@@ -3265,15 +3257,6 @@ function startTick() {
      */
 
     renderHeaderActivity();
-
-    /*
-     * Notifications are snapshots, so rebuild the active one on
-     * every timer tick to keep the elapsed time current.
-     */
-
-    if (active) {
-      showActiveNotification();
-    }
 
     renderLog();
 

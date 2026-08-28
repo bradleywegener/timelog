@@ -2,6 +2,20 @@
 
 All notable changes to timelog are documented here.
 
+## [0.3.13] - 2026-08-28
+
+### Changed
+- Active notifications now show `Recording` without calculating or displaying elapsed time.
+
+---
+
+## [0.3.12] - 2026-08-28
+
+### Fixed
+- Active notification refreshes are throttled to a stable ten-second interval to prevent notification-center updates from stuttering or arriving out of order.
+
+---
+
 ## [0.3.11] - 2026-08-28
 
 ### Fixed
