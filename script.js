@@ -3453,6 +3453,12 @@ function renderTrack() {
 
 
   todayEntries
+    .slice()
+    .sort(
+      (a, b) =>
+        b.start -
+        a.start
+    )
     .slice(0, 6)
     .forEach(entry => {
 
