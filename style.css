@@ -629,14 +629,6 @@ HEADER RIGHT
     transform 0.2s ease;
 }
 
-html[data-theme="light"] .menu-switch:not(#theme-menu-toggle) {
-  background: var(--accent);
-}
-
-html[data-theme="light"] .menu-switch:not(#theme-menu-toggle) span {
-  transform: translateX(17px);
-}
-
 .menu-switch.active {
   background: var(--accent);
 }
@@ -649,14 +641,6 @@ html[data-theme="light"] .menu-switch:not(#theme-menu-toggle) span {
   transform: translateX(8px);
 
   background: var(--accent);
-}
-
-html[data-theme="light"] #time-format-menu-toggle:not(.active) {
-  background: var(--border-light);
-}
-
-html[data-theme="light"] #time-format-menu-toggle:not(.active) span {
-  transform: none;
 }
 
 

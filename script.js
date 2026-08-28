@@ -107,10 +107,6 @@ let timeFormat =
 let notificationsEnabled =
   localStorage.getItem('timelog-notifications') === 'on';
 
-let notificationTickCount = 0;
-
-let activeNotification = null;
-
 const UNTRACKED_GRACE_MS = 15 * 60 * 1000;
 
 let untrackedEntries = mergeAdjacentMatchingEntries(
@@ -400,12 +396,26 @@ async function toggleNotifications() {
 }
 
 
-function showActiveNotification() {
+async function showActiveNotification() {
 
   if (
     !notificationsEnabled ||
     !('Notification' in window) ||
     Notification.permission !== 'granted' ||
+    !active
+  ) {
+    return;
+  }
+
+  if (!('serviceWorker' in navigator)) {
+    return;
+  }
+
+  const registration =
+    await navigator.serviceWorker.ready;
+
+  if (
+    !notificationsEnabled ||
     !active
   ) {
     return;
@@ -432,9 +442,10 @@ function showActiveNotification() {
       ? cat.label + ' · ' + elapsed
       : elapsed;
 
-  activeNotification = new Notification(title, {
+  await registration.showNotification(title, {
     body,
     tag: 'timelog-active',
+    renotify: false,
     silent: true,
     icon: './icons/icon-192.png'
   });
@@ -442,32 +453,27 @@ function showActiveNotification() {
 }
 
 
-function clearActiveNotification() {
-
-  if (activeNotification) {
-    activeNotification.close();
-    activeNotification = null;
-    return;
-  }
-
-  /*
-   * Fallback: close by tag in case the
-   * reference was lost across page loads.
-   */
+async function clearActiveNotification() {
 
   if (
     !('Notification' in window) ||
-    Notification.permission !== 'granted'
+    Notification.permission !== 'granted' ||
+    !('serviceWorker' in navigator)
   ) {
     return;
   }
 
-  const n = new Notification('', {
-    tag: 'timelog-active',
-    silent: true
-  });
+  const registration =
+    await navigator.serviceWorker.ready;
 
-  n.close();
+  const notifications =
+    await registration.getNotifications({
+      tag: 'timelog-active'
+    });
+
+  notifications.forEach(notification =>
+    notification.close()
+  );
 
 }
 
@@ -3036,8 +3042,6 @@ function startTimer() {
 
   renderLog();
 
-  notificationTickCount = 0;
-
   showActiveNotification();
 
   startTick();
@@ -3263,13 +3267,11 @@ function startTick() {
     renderHeaderActivity();
 
     /*
-     * Update the active notification
-     * once per minute.
+     * Notifications are snapshots, so rebuild the active one on
+     * every timer tick to keep the elapsed time current.
      */
 
-    notificationTickCount++;
-
-    if (notificationTickCount % 60 === 0) {
+    if (active) {
       showActiveNotification();
     }
 

@@ -2,6 +2,28 @@
 
 All notable changes to timelog are documented here.
 
+## [0.3.11] - 2026-08-28
+
+### Fixed
+- Network-first service worker requests now bypass the browser HTTP cache so updated assets are used immediately after deployment.
+
+---
+
+## [0.3.10] - 2026-08-28
+
+### Fixed
+- Service worker asset installs now bypass the browser HTTP cache so updated app files are loaded reliably.
+
+---
+
+## [0.3.9] - 2026-08-28
+
+### Fixed
+- Active notifications now replace one tagged notification in place so the elapsed time can update live without creating a notification every second.
+- Notification and time-format switches no longer appear enabled just because the app is using the light theme.
+
+---
+
 ## [0.3.8] - 2026-08-27
 
 ### Added

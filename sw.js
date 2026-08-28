@@ -45,9 +45,26 @@ self.addEventListener(
 
           return caches
             .open(CACHE_NAME)
-            .then(cache =>
-              cache.addAll(APP_FILES)
-            );
+            .then(async cache => {
+              await Promise.all(
+                APP_FILES.map(async file => {
+                  const response = await fetch(
+                    `${file}?v=${encodeURIComponent(
+                      versionData.version
+                    )}`,
+                    { cache: 'reload' }
+                  );
+
+                  if (!response.ok) {
+                    throw new Error(
+                      `Could not cache ${file}`
+                    );
+                  }
+
+                  await cache.put(file, response);
+                })
+              );
+            });
 
         })
 
@@ -154,7 +171,9 @@ self.addEventListener(
 
     event.respondWith(
 
-      fetch(event.request)
+      fetch(event.request, {
+        cache: 'no-store'
+      })
         .then(response => {
 
           if (
