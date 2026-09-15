@@ -1029,6 +1029,74 @@ nav.bottom-nav {
 }
 
 
+.instructions-intro {
+  padding: 6px 2px 20px;
+}
+
+
+.instructions-intro h1 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 28px;
+  line-height: 1.1;
+  margin-bottom: 10px;
+}
+
+
+.instructions-intro p {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+
+.instructions-section {
+  padding: 20px;
+}
+
+
+.instructions-list {
+  display: grid;
+  gap: 10px;
+  padding-left: 20px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+
+.instructions-list strong,
+.instructions-shortcuts dt {
+  color: var(--text);
+}
+
+
+.instructions-shortcuts {
+  display: grid;
+  gap: 12px;
+}
+
+
+.instructions-shortcuts div {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.8fr) 1.2fr;
+  gap: 12px;
+  align-items: baseline;
+}
+
+
+.instructions-shortcuts dt {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+
+.instructions-shortcuts dd {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+
 .section-label {
   font-size: 10px;
 
@@ -1090,6 +1158,53 @@ nav.bottom-nav {
   font-size: 13px;
 
   flex-wrap: wrap;
+}
+
+
+.active-category-button {
+  border: 1px solid var(--active-category-color, var(--border-light));
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: color-mix(
+    in srgb,
+    var(--active-category-color, var(--surface-raised)) 16%,
+    transparent
+  );
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+
+.active-category-button:hover {
+  background: color-mix(
+    in srgb,
+    var(--active-category-color, var(--surface-raised)) 24%,
+    transparent
+  );
+}
+
+
+.active-start-time {
+  color: var(--text-secondary);
+  font-size: 11px;
+  margin-bottom: 16px;
+}
+
+
+.active-category-picker {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: -8px 0 20px;
+}
+
+
+.active-category-picker[hidden] {
+  display: none;
 }
 
 
@@ -1222,6 +1337,11 @@ input[type="text"]:focus {
 }
 
 
+input[type="text"].focus-idle {
+  border-color: var(--border-light);
+}
+
+
 input[type="text"]::placeholder {
   color: #484F58;
 }
@@ -1252,6 +1372,30 @@ input[type="text"]::placeholder {
   touch-action: manipulation;
 
   user-select: none;
+}
+
+
+button:focus-visible:not(.focus-idle),
+input:focus-visible:not(.focus-idle),
+select:focus-visible:not(.focus-idle),
+textarea:focus-visible:not(.focus-idle) {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+
+.btn-start:focus-visible:not(.focus-idle),
+.btn-stop:focus-visible:not(.focus-idle) {
+  outline-color: #FFFFFF;
+  box-shadow:
+    0 0 0 6px var(--accent),
+    0 0 0 9px var(--background);
+}
+
+
+.focus-idle {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 
@@ -2219,6 +2363,10 @@ MOBILE
     transform 0.2s ease;
 }
 
+.edit-modal[aria-hidden="true"] {
+  visibility: hidden;
+}
+
 .edit-modal.open {
   opacity: 1;
   pointer-events: auto;
@@ -2541,6 +2689,10 @@ MOBILE
   transition:
     opacity 0.2s ease,
     transform 0.2s ease;
+}
+
+.message-modal[aria-hidden="true"] {
+  visibility: hidden;
 }
 
 .message-modal.open {

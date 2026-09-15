@@ -324,6 +324,32 @@
 
     </button>
 
+    <button
+      class="menu-item menu-item-button"
+      onclick="openInstructions()"
+    >
+
+      <div class="menu-item-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M12 10v6"></path>
+          <path d="M12 7h.01"></path>
+        </svg>
+      </div>
+
+      <div class="menu-item-text">
+        <div class="menu-item-title">Instructions</div>
+        <div class="menu-item-subtitle">
+          Learn how to use timelog
+        </div>
+      </div>
+
+      <div class="menu-item-chevron">
+        ›
+      </div>
+
+    </button>
+
   </div>
 
 
@@ -385,12 +411,27 @@
 
             <span class="muted">·</span>
 
-            <span
+            <button
+              type="button"
               id="active-cat-display"
-              class="muted"
-            ></span>
+              class="active-category-button"
+              onclick="toggleActiveCategoryPicker()"
+              aria-expanded="false"
+              aria-label="Change current category"
+            ></button>
 
           </div>
+
+          <div
+            class="active-start-time"
+            id="active-start-time"
+          ></div>
+
+          <div
+            class="active-category-picker"
+            id="active-category-picker"
+            hidden
+          ></div>
 
           <button
             class="btn btn-stop"
@@ -465,6 +506,87 @@
 
         <div id="today-entries"></div>
 
+      </div>
+
+    </div>
+
+
+    <!-- ==================================================
+         INSTRUCTIONS
+         ================================================== -->
+
+    <div
+      id="view-instructions"
+      class="view instructions-view"
+    >
+
+      <div class="instructions-intro">
+        <div class="section-label">instructions</div>
+        <h1 tabindex="-1" id="instructions-title">How to use timelog</h1>
+        <p>
+          Record what you are doing, review where your time went, and fill in gaps later. Everything stays in this browser.
+        </p>
+      </div>
+
+      <div class="card instructions-section">
+        <div class="section-label">track time</div>
+        <ol class="instructions-list">
+          <li>Choose a category and optionally enter an activity name.</li>
+          <li>Press <strong>Enter</strong> in the activity field, or choose <strong>Start Timer</strong>.</li>
+          <li>While recording, use <strong>Stop &amp; Save</strong> or press <strong>Ctrl+Enter</strong> on Windows/Linux, or <strong>Cmd+Enter</strong> on macOS.</li>
+          <li>The active card shows elapsed time, start time, current category, and activity name.</li>
+        </ol>
+      </div>
+
+      <div class="card instructions-section">
+        <div class="section-label">categories</div>
+        <ul class="instructions-list">
+          <li>Categories identify the kind of time you are recording.</li>
+          <li>While recording, select the current category to change it without stopping the timer.</li>
+          <li>Add, edit, recolour, or delete categories from the hamburger menu.</li>
+          <li>Deleting a category moves its existing activities to another category you choose.</li>
+        </ul>
+      </div>
+
+      <div class="card instructions-section">
+        <div class="section-label">untracked time</div>
+        <ul class="instructions-list">
+          <li>Time between activities is shown as untracked.</li>
+          <li>Choose an untracked period to classify it with a category and optional description.</li>
+          <li>Long untracked periods can be split into two activities with separate times, names, and categories.</li>
+          <li>Deleting a tracked activity turns its time back into untracked time.</li>
+        </ul>
+      </div>
+
+      <div class="card instructions-section">
+        <div class="section-label">review your time</div>
+        <ul class="instructions-list">
+          <li><strong>Track</strong> shows the current timer and latest activities.</li>
+          <li><strong>Log</strong> shows the full activity history, including the current activity.</li>
+          <li><strong>Insights</strong> shows daily category totals, weekly breakdowns, and all-time statistics.</li>
+          <li>Activities crossing midnight are split between the affected days.</li>
+        </ul>
+      </div>
+
+      <div class="card instructions-section">
+        <div class="section-label">keyboard shortcuts</div>
+        <dl class="instructions-shortcuts">
+          <div><dt>Tab</dt><dd>Move through available controls.</dd></div>
+          <div><dt>Enter</dt><dd>Select a category or start a timer from the activity field.</dd></div>
+          <div><dt>Ctrl+Enter / Cmd+Enter</dt><dd>Stop and save the active timer.</dd></div>
+          <div><dt>Escape</dt><dd>Close the active dialog.</dd></div>
+        </dl>
+      </div>
+
+      <div class="card instructions-section">
+        <div class="section-label">settings and offline use</div>
+        <ul class="instructions-list">
+          <li>Switch between light, dark, and system appearance in the hamburger menu.</li>
+          <li>Choose 12-hour or 24-hour time display.</li>
+          <li>Enable notifications to see the active activity while the app is in the background.</li>
+          <li>timelog works offline after its app files have been cached as a PWA.</li>
+          <li>Your entries are stored in this browser and are not synchronised between devices.</li>
+        </ul>
       </div>
 
     </div>
@@ -655,9 +777,16 @@
 <div
   class="edit-modal"
   id="edit-modal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="edit-modal-title"
+  aria-hidden="true"
 >
 
-  <div class="edit-modal-title">
+  <div
+    class="edit-modal-title"
+    id="edit-modal-title"
+  >
     classify untracked time
   </div>
 
@@ -814,6 +943,10 @@
 <div
   class="edit-modal category-modal"
   id="category-modal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="category-modal-title"
+  aria-hidden="true"
 >
 
   <div
@@ -954,9 +1087,16 @@
 <div
   class="edit-modal category-delete-modal"
   id="category-delete-modal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="category-delete-modal-title"
+  aria-hidden="true"
 >
 
-  <div class="edit-modal-title">
+  <div
+    class="edit-modal-title"
+    id="category-delete-modal-title"
+  >
     delete category
   </div>
 

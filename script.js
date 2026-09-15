@@ -99,6 +99,15 @@ let timerInterval = null;
 
 let insightDate = new Date();
 
+const dialogReturnFocus = new Map();
+
+const dialogIds = [
+  'message-modal',
+  'category-delete-modal',
+  'edit-modal',
+  'category-modal'
+];
+
 let timeFormat =
   localStorage.getItem('timelog-time-format') === '24'
     ? '24'
@@ -106,6 +115,194 @@ let timeFormat =
 
 let notificationsEnabled =
   localStorage.getItem('timelog-notifications') === 'on';
+
+
+function getOpenDialog() {
+
+  return dialogIds
+    .map(id => document.getElementById(id))
+    .find(dialog =>
+      dialog && dialog.classList.contains('open')
+    );
+
+}
+
+
+function getDialogFocusableElements(dialog) {
+
+  return Array.from(
+    dialog.querySelectorAll(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+    )
+  ).filter(element =>
+    !element.hidden &&
+    element.offsetParent !== null
+  );
+
+}
+
+
+function rememberDialogTrigger(dialogId) {
+
+  if (document.activeElement instanceof HTMLElement) {
+    dialogReturnFocus.set(
+      dialogId,
+      document.activeElement
+    );
+  }
+
+}
+
+
+function focusDialog(dialogId) {
+
+  const dialog =
+    document.getElementById(dialogId);
+
+  if (!dialog) {
+    return;
+  }
+
+  const focusable =
+    getDialogFocusableElements(dialog);
+
+  if (focusable.length) {
+    focusable[0].focus();
+  } else {
+    dialog.setAttribute('tabindex', '-1');
+    dialog.focus();
+  }
+
+}
+
+
+function restoreDialogFocus(dialogId) {
+
+  let trigger = dialogReturnFocus.get(dialogId);
+
+  dialogReturnFocus.delete(dialogId);
+
+  if (
+    trigger &&
+    trigger.closest('#app-menu') &&
+    !document
+      .getElementById('app-menu')
+      .classList.contains('open')
+  ) {
+    trigger = document.getElementById('menu-toggle');
+  }
+
+  if (
+    trigger &&
+    trigger.isConnected &&
+    !trigger.hidden &&
+    trigger.offsetParent !== null
+  ) {
+    trigger.focus();
+  }
+
+}
+
+
+document.addEventListener('keydown', event => {
+
+  const dialog = getOpenDialog();
+
+  if (!dialog) {
+    return;
+  }
+
+  if (event.key === 'Escape') {
+    event.preventDefault();
+
+    if (dialog.id === 'edit-modal') {
+      closeUntrackedEditor();
+    } else if (dialog.id === 'category-modal') {
+      closeCategoryEditor();
+    } else if (dialog.id === 'category-delete-modal') {
+      closeCategoryDelete();
+    } else {
+      closeAppMessage(false);
+    }
+
+    return;
+  }
+
+  if (event.key !== 'Tab') {
+    return;
+  }
+
+  const focusable =
+    getDialogFocusableElements(dialog);
+
+  if (!focusable.length) {
+    event.preventDefault();
+    dialog.focus();
+    return;
+  }
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+
+  if (!dialog.contains(document.activeElement)) {
+    event.preventDefault();
+    (event.shiftKey ? last : first).focus();
+    return;
+  }
+
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+
+});
+
+
+let focusIdleTimer = null;
+
+
+function resetFocusIndicator(target) {
+
+  if (focusIdleTimer) {
+    clearTimeout(focusIdleTimer);
+  }
+
+  const element =
+    target instanceof Element
+      ? target.closest('button, input, select, textarea')
+      : null;
+
+  if (!element) {
+    return;
+  }
+
+  element.classList.remove('focus-idle');
+
+  focusIdleTimer = setTimeout(() => {
+    if (document.activeElement === element) {
+      element.classList.add('focus-idle');
+    }
+  }, 2000);
+
+}
+
+
+document.addEventListener('focusin', event => {
+  resetFocusIndicator(event.target);
+});
+
+
+document.addEventListener('keydown', event => {
+  resetFocusIndicator(event.target);
+});
+
+
+document.addEventListener('pointerdown', event => {
+  resetFocusIndicator(event.target);
+});
 
 const UNTRACKED_GRACE_MS = 15 * 60 * 1000;
 
@@ -619,6 +816,18 @@ function closeMenu() {
 
 }
 
+
+function openInstructions() {
+
+  closeMenu();
+  switchView('instructions');
+
+  document
+    .getElementById('instructions-title')
+    .focus();
+
+}
+
 function saveCustomCategories() {
 
   localStorage.setItem(
@@ -652,11 +861,17 @@ function setCategoryView(mode = 'manage') {
 
 function openCategoryEditor(mode = 'manage') {
 
+  rememberDialogTrigger('category-modal');
+
   closeMenu();
 
   document
     .getElementById('category-modal')
     .classList.add('open');
+
+  document
+    .getElementById('category-modal')
+    .setAttribute('aria-hidden', 'false');
 
   document
     .getElementById('category-modal-backdrop')
@@ -669,6 +884,8 @@ function openCategoryEditor(mode = 'manage') {
     document
       .getElementById('category-name')
       .focus();
+  } else {
+    focusDialog('category-modal');
   }
 
 }
@@ -801,13 +1018,21 @@ function openCategoryDelete(id) {
 
   target.dataset.categoryId = id;
 
+  rememberDialogTrigger('category-delete-modal');
+
   document
     .getElementById('category-delete-modal')
     .classList.add('open');
 
   document
+    .getElementById('category-delete-modal')
+    .setAttribute('aria-hidden', 'false');
+
+  document
     .getElementById('category-delete-modal-backdrop')
     .classList.add('open');
+
+  focusDialog('category-delete-modal');
 
 }
 
@@ -818,8 +1043,14 @@ function closeCategoryDelete() {
     .classList.remove('open');
 
   document
+    .getElementById('category-delete-modal')
+    .setAttribute('aria-hidden', 'true');
+
+  document
     .getElementById('category-delete-modal-backdrop')
     .classList.remove('open');
+
+  restoreDialogFocus('category-delete-modal');
 
 }
 
@@ -897,8 +1128,14 @@ function closeCategoryEditor() {
     .classList.remove('open');
 
   document
+    .getElementById('category-modal')
+    .setAttribute('aria-hidden', 'true');
+
+  document
     .getElementById('category-modal-backdrop')
     .classList.remove('open');
+
+  restoreDialogFocus('category-modal');
 
 }
 
@@ -1825,6 +2062,25 @@ function buildPills() {
 
     };
 
+    pill.onkeydown = event => {
+
+      if (event.key !== 'Enter') {
+        return;
+      }
+
+      event.preventDefault();
+
+      selectedCat =
+        cat.id;
+
+      buildPills();
+
+      document
+        .getElementById('entry-label')
+        .focus();
+
+    };
+
     container.appendChild(pill);
 
   });
@@ -1841,6 +2097,8 @@ function openUntrackedEditor(id) {
   if (!entry) {
     return;
   }
+
+  rememberDialogTrigger('edit-modal');
 
   editingUntrackedId = id;
 
@@ -1927,6 +2185,10 @@ function openUntrackedEditor(id) {
 
   modal.classList.add('open');
   backdrop.classList.add('open');
+
+  modal.setAttribute('aria-hidden', 'false');
+
+  labelInput.focus();
 
 }
 
@@ -2195,12 +2457,20 @@ function closeUntrackedEditor() {
 
   document
     .getElementById(
+      'edit-modal'
+    )
+    .setAttribute('aria-hidden', 'true');
+
+  document
+    .getElementById(
       'edit-modal-backdrop'
     )
     .classList.remove('open');
 
   editingUntrackedId =
     null;
+
+  restoreDialogFocus('edit-modal');
 
 }
 
@@ -2211,6 +2481,8 @@ function showAppMessage(
 
   const modal =
     document.getElementById('message-modal');
+
+  rememberDialogTrigger('message-modal');
 
   document
     .getElementById('message-modal-title')
@@ -2249,6 +2521,8 @@ function showAppMessage(
 
   modal.setAttribute('aria-hidden', 'false');
 
+  focusDialog('message-modal');
+
 }
 
 function closeAppMessage(confirmed) {
@@ -2263,6 +2537,8 @@ function closeAppMessage(confirmed) {
     .classList.remove('open');
 
   modal.setAttribute('aria-hidden', 'true');
+
+  restoreDialogFocus('message-modal');
 
   const action =
     confirmed
@@ -3040,6 +3316,41 @@ function startTimer() {
 }
 
 
+document
+  .getElementById('entry-label')
+  .addEventListener('keydown', event => {
+
+    if (
+      event.key !== 'Enter' ||
+      event.isComposing ||
+      active
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    startTimer();
+
+  });
+
+
+document.addEventListener('keydown', event => {
+
+  if (
+    !active ||
+    event.key !== 'Enter' ||
+    (!event.ctrlKey && !event.metaKey) ||
+    event.isComposing
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+  stopTimer();
+
+});
+
+
 function stopTimer() {
 
   if (!active) {
@@ -3083,6 +3394,87 @@ function stopTimer() {
   renderAll();
 
   startTick();
+}
+
+
+function toggleActiveCategoryPicker() {
+
+  const picker =
+    document.getElementById('active-category-picker');
+
+  const button =
+    document.getElementById('active-cat-display');
+
+  if (!picker || !button || !active) {
+    return;
+  }
+
+  const isOpen = !picker.hidden;
+
+  picker.hidden = isOpen;
+  button.setAttribute('aria-expanded', String(!isOpen));
+
+  if (!isOpen) {
+    buildActiveCategoryPills();
+  }
+
+}
+
+
+function buildActiveCategoryPills() {
+
+  const picker =
+    document.getElementById('active-category-picker');
+
+  if (!picker || !active) {
+    return;
+  }
+
+  picker.innerHTML = '';
+
+  CATEGORIES.forEach(category => {
+
+    const pill = document.createElement('button');
+
+    pill.type = 'button';
+    pill.className = 'cat-pill';
+    pill.textContent =
+      category.emoji + ' ' + category.label;
+
+    if (category.id === active.category) {
+      pill.classList.add('selected');
+      pill.style.borderColor = category.color;
+      pill.style.background = category.color + '22';
+    }
+
+    pill.onclick = () => {
+
+      active = {
+        ...active,
+        category: category.id
+      };
+
+      localStorage.setItem(
+        'timelog-active',
+        JSON.stringify(active)
+      );
+
+      picker.hidden = true;
+
+      document
+        .getElementById('active-cat-display')
+        .setAttribute('aria-expanded', 'false');
+
+      renderTrack();
+      renderHeaderActivity();
+      showActiveNotification();
+
+    };
+
+    picker.appendChild(pill);
+
+  });
+
 }
 
 
@@ -3324,7 +3716,23 @@ function renderTrack() {
         'active-cat-display'
       )
       .textContent =
-      cat.label;
+      cat.emoji + ' ' + cat.label;
+
+    document
+      .getElementById(
+        'active-cat-display'
+      )
+      .style.setProperty(
+        '--active-category-color',
+        cat.color
+      );
+
+    document
+      .getElementById(
+        'active-start-time'
+      )
+      .textContent =
+      'Started ' + fmtTime(active.start);
 
     document
       .getElementById(
@@ -3453,6 +3861,12 @@ function renderTrack() {
 
 
   todayEntries
+    .slice()
+    .sort(
+      (a, b) =>
+        b.start -
+        a.start
+    )
     .slice(0, 6)
     .forEach(entry => {
 
@@ -5466,9 +5880,11 @@ function switchView(v, btn) {
     );
 
 
-  btn.classList.add(
-    'active'
-  );
+  if (btn) {
+    btn.classList.add(
+      'active'
+    );
+  }
 
   if (v === 'log') {
     renderLog();
@@ -5516,7 +5932,9 @@ async function loadVersion() {
 function registerServiceWorker() {
 
   if (
-    'serviceWorker' in navigator
+    'serviceWorker' in navigator &&
+    (location.protocol === 'http:' ||
+      location.protocol === 'https:')
   ) {
 
     window.addEventListener(
@@ -5570,6 +5988,15 @@ function registerServiceWorker() {
       }
     );
 
+  }
+
+  if (
+    'serviceWorker' in navigator &&
+    location.protocol === 'file:'
+  ) {
+    console.info(
+      'Service worker skipped for file://. Use localhost or HTTPS for PWA features.'
+    );
   }
 
 }
