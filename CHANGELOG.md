@@ -2,6 +2,40 @@
 
 All notable changes to timelog are documented here.
 
+## [0.4.1] - 2026-09-15
+
+### Added
+- Added an Instructions page to the hamburger menu with guidance for using timelog and a complete feature overview.
+
+---
+
+## [0.4.0] - 2026-09-15
+
+### Added
+- An Instructions page is now available from the hamburger menu with the app's workflows, features, and keyboard shortcuts.
+- Keyboard navigation now keeps focus within open dialogs and restores focus when they close.
+- Press `Enter` on the activity name field to start tracking.
+- Press `Ctrl+Enter` on Windows/Linux or `Cmd+Enter` on macOS to stop and save the active timer.
+- Press `Enter` on a category while tabbing to select it and move focus to the activity name field.
+- Keyboard focus indicators now fade away after two seconds of inactivity without removing focus.
+
+### Fixed
+- Closed dialog controls no longer appear in the page's normal Tab order.
+- Dialogs now expose clearer accessibility semantics and keyboard behavior.
+
+---
+
+## [0.3.14] - 2026-09-15
+
+### Added
+- Active timers now show their exact start time.
+- Active timer categories can be changed without stopping the timer.
+
+### Fixed
+- Service-worker registration is skipped when the app is opened directly from a `file://` URL.
+
+---
+
 ## [0.3.13] - 2026-08-28
 
 ### Changed
